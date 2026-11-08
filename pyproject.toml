@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "air-claim-triage"
+version = "0.1.0"
+description = "Evidence-grounded air passenger claim triage service"
+requires-python = ">=3.11"
+dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "pydantic>=2.8,<3", "redis>=5,<6", "langgraph>=0.2,<2", "langchain-core>=0.3,<2", "langchain-community>=0.3,<1", "faiss-cpu>=1.8,<2", "scikit-learn>=1.5,<2", "pymupdf>=1.24,<2", "prometheus-client>=0.21,<1", "opentelemetry-api>=1.28,<1.45.1", "opentelemetry-sdk>=1.28,<1.45.1", "opentelemetry-exporter-otlp-proto-http>=1.28,<1.45.1", "opentelemetry-instrumentation-fastapi>=0.49b0,<0.66b1", "httpx>=0.27,<1", "locust>=2.32,<3"]
+
+[tool.uv]
+dev-dependencies = []

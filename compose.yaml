@@ -1,0 +1,172 @@
+﻿services:
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CLAIM_RATE_LIMIT_PER_MINUTE: ${CLAIM_RATE_LIMIT_PER_MINUTE:-30}
+      WORKER_MODE: "false"
+      SERVICE_ROLE: api
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+    depends_on:
+      redis: { condition: service_healthy }
+    volumes: ["corpus_data:/srv/corpus"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  intake-agent:
+    build: .
+    command: python -m app.worker
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      WORKER_MODE: "true"
+      SERVICE_ROLE: intake-agent
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-stub}
+      STUB_PROVIDER_URL: ${STUB_PROVIDER_URL:-http://model-stub:8090/v1/advise}
+      MODEL_API_BASE: ${MODEL_API_BASE:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      MODEL_NAME: ${MODEL_NAME:-}
+      MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-8}
+      MODEL_MAX_TOTAL_SECONDS: ${MODEL_MAX_TOTAL_SECONDS:-12}
+      PROMPT_VERSION: ${PROMPT_VERSION:-triage-v2}
+      MODEL_INPUT_COST_PER_1K: ${MODEL_INPUT_COST_PER_1K:-0}
+      MODEL_OUTPUT_COST_PER_1K: ${MODEL_OUTPUT_COST_PER_1K:-0}
+      CACHE_RETRIEVALS: ${CACHE_RETRIEVALS:-true}
+    depends_on:
+      redis: { condition: service_healthy }
+      model-stub: { condition: service_healthy }
+    volumes: ["corpus_data:/srv/corpus"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import redis,os; redis.Redis.from_url(os.environ['REDIS_URL']).ping()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  review-agent:
+    build: .
+    command: python -m app.reviewer
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SERVICE_ROLE: review-agent
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-stub}
+      STUB_PROVIDER_URL: ${STUB_PROVIDER_URL:-http://model-stub:8090/v1/advise}
+      MODEL_API_BASE: ${MODEL_API_BASE:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      MODEL_NAME: ${MODEL_NAME:-}
+      MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-8}
+      MODEL_MAX_TOTAL_SECONDS: ${MODEL_MAX_TOTAL_SECONDS:-12}
+      PROMPT_VERSION: ${PROMPT_VERSION:-triage-v2}
+      MODEL_INPUT_COST_PER_1K: ${MODEL_INPUT_COST_PER_1K:-0}
+      MODEL_OUTPUT_COST_PER_1K: ${MODEL_OUTPUT_COST_PER_1K:-0}
+      CACHE_RETRIEVALS: ${CACHE_RETRIEVALS:-true}
+    depends_on:
+      redis: { condition: service_healthy }
+      model-stub: { condition: service_healthy }
+    volumes: ["corpus_data:/srv/corpus"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import redis,os; redis.Redis.from_url(os.environ['REDIS_URL']).ping()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  dashboard:
+    build: .
+    command: uvicorn app.dashboard:app --host 0.0.0.0 --port 8080
+    environment:
+      SERVICE_ROLE: dashboard
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+    ports: ["8080:8080"]
+    depends_on:
+      api: { condition: service_healthy }
+    volumes: ["corpus_data:/srv/corpus"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  model-stub:
+    build: .
+    command: uvicorn app.stub_provider:app --host 0.0.0.0 --port 8090
+    environment:
+      STUB_MODEL_DELAY_SECONDS: ${STUB_MODEL_DELAY_SECONDS:-0.15}
+      STUB_FAIL: ${STUB_FAIL:-false}
+      STUB_UNSUPPORTED_OUTPUT: ${STUB_UNSUPPORTED_OUTPUT:-false}
+      SERVICE_ROLE: model-stub
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/healthz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    ports: ["16686:16686", "4317:4317", "4318:4318"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:16686/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    ports: ["9090:9090"]
+    volumes: ["./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "/bin/prometheus", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports: ["3000:3000"]
+    volumes:
+      - "./monitoring/grafana.ini:/etc/grafana/grafana.ini:ro"
+      - "./monitoring/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro"
+      - "./monitoring/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro"
+      - "./monitoring/dashboard.json:/var/lib/grafana/dashboards/triage.json:ro"
+    depends_on:
+      prometheus: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  locust:
+    build: .
+    profiles: ["benchmark"]
+    entrypoint: ["locust"]
+    command: ["-f", "/srv/locustfile.py", "--host", "http://api:8000"]
+    depends_on:
+      api: { condition: service_healthy }
+    volumes:
+      - "./locustfile.py:/srv/locustfile.py:ro"
+      - "./eval:/srv/eval"
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    privileged: true
+    devices: ["/dev/kmsg"]
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker:/var/lib/docker:ro"
+      - "/dev/disk:/dev/disk:ro"
+volumes:
+  redis_data:
+  corpus_data:
+
+
+
