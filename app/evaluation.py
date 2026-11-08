@@ -4,7 +4,7 @@ import os
 import time
 from pathlib import Path
 
-from .agents import adjudicate, verify, search_corpus, lookup_clause
+from .agents import adjudicate, verify, search_corpus, lookup_clause, classify_extract
 
 ROOT = Path(__file__).resolve().parent.parent
 EVAL_FILE = ROOT / "eval" / "scenarios.json"
@@ -26,7 +26,7 @@ def run_variant(cases, improved):
                 if p:
                     docs[cid] = p
         evidence = list(docs.values())
-        result = adjudicate(claim, {}, evidence)
+        result = adjudicate(claim, classify_extract(claim), evidence)
         valid, _ = verify(result, evidence)
         citations = {c["source_id"] for c in result.get("citations", [])}
         support = set(case["supporting_passages"])
@@ -57,7 +57,7 @@ def evaluate():
     after, after_cases = run_variant(cases, True)
     metrics = {"before": {"prompt_version": "triage-v1", "strategy": "single entitlement search", "metrics": before, "cases": before_cases},
                "after": {"prompt_version": "triage-v2", "strategy": "condition and cross-reference search", "metrics": after, "cases": after_cases},
-               "delta": {key: round(after[key]-before[key], 4) for key in before}}
+               "delta": {key: round(after[key]-before[key], 4) for key in before if key != "scenario_count"}}
     report = {"created_at": time.time(), "metric_definitions": {
         "groundedness": "fraction of routes supported by retrieved passages and verifier; no-claim escalation is safe",
         "context_relevance": "per-case fraction of citations matching scenario-declared supporting clause IDs, averaged",

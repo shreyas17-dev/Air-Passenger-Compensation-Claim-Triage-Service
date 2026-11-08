@@ -424,5 +424,33 @@
       "CAR-3.3.2",
       "CAR-3.8.1"
     ]
+  },
+  {
+    "id": "E21",
+    "expected_position": "human_escalation",
+    "supporting_passages": [],
+    "claim": {
+      "disruption": "cancellation",
+      "free_text": "My suitcase is missing. I want baggage compensation.",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "contact_details_provided": true,
+      "cause": "operational"
+    }
+  },
+  {
+    "id": "E22",
+    "expected_position": "human_escalation",
+    "supporting_passages": [],
+    "claim": {
+      "disruption": "delay",
+      "free_text": "My flight was cancelled and I was told 90 minutes before departure.",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "contact_details_provided": true,
+      "cause": "operational"
+    }
   }
 ]

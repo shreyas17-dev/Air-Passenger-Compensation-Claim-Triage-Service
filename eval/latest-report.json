@@ -1,5 +1,5 @@
 {
-  "created_at": 1793306103.199128,
+  "created_at": 1794125450.1146133,
   "metric_definitions": {
     "groundedness": "fraction of routes supported by retrieved passages and verifier; no-claim escalation is safe",
     "context_relevance": "per-case fraction of citations matching scenario-declared supporting clause IDs, averaged",
@@ -11,12 +11,12 @@
     "prompt_version": "triage-v1",
     "strategy": "single entitlement search",
     "metrics": {
-      "groundedness": 0.7,
-      "context_relevance": 0.2,
+      "groundedness": 0.7272727272727273,
+      "context_relevance": 0.18181818181818182,
       "faithfulness": 1.0,
       "hallucination_rate": 0.0,
       "accuracy": 1.0,
-      "scenario_count": 20
+      "scenario_count": 22
     },
     "cases": [
       {
@@ -248,6 +248,28 @@
         "hallucination": 0,
         "citation_ids": [],
         "pass": true
+      },
+      {
+        "id": "E21",
+        "expected": "human_escalation",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 0,
+        "citation_ids": [],
+        "pass": true
+      },
+      {
+        "id": "E22",
+        "expected": "human_escalation",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 0,
+        "citation_ids": [],
+        "pass": true
       }
     ]
   },
@@ -256,11 +278,11 @@
     "strategy": "condition and cross-reference search",
     "metrics": {
       "groundedness": 1.0,
-      "context_relevance": 0.725,
+      "context_relevance": 0.6590909090909091,
       "faithfulness": 1.0,
       "hallucination_rate": 0.0,
       "accuracy": 1.0,
-      "scenario_count": 20
+      "scenario_count": 22
     },
     "cases": [
       {
@@ -539,15 +561,36 @@
           "CAR-3.8.1"
         ],
         "pass": true
+      },
+      {
+        "id": "E21",
+        "expected": "human_escalation",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 0,
+        "citation_ids": [],
+        "pass": true
+      },
+      {
+        "id": "E22",
+        "expected": "human_escalation",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 0,
+        "citation_ids": [],
+        "pass": true
       }
     ]
   },
   "delta": {
-    "groundedness": 0.3,
-    "context_relevance": 0.525,
+    "groundedness": 0.2727,
+    "context_relevance": 0.4773,
     "faithfulness": 0.0,
     "hallucination_rate": 0.0,
-    "accuracy": 0.0,
-    "scenario_count": 0
+    "accuracy": 0.0
   }
 }
