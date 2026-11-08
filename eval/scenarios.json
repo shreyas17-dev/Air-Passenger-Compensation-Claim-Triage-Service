@@ -1,0 +1,428 @@
+[
+  {
+    "id": "E01",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": true,
+      "alternate_accepted": true,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "request_further_evidence",
+    "supporting_passages": [
+      "CAR-3.3.2",
+      "CAR-3.8.1"
+    ]
+  },
+  {
+    "id": "E02",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": null,
+      "alternate_accepted": null,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": null,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "request_further_evidence",
+    "supporting_passages": [
+      "CAR-3.3.2",
+      "CAR-3.3.3"
+    ]
+  },
+  {
+    "id": "E03",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": true,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.3.4"
+    ]
+  },
+  {
+    "id": "E04",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "weather beyond airline control",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-1.4-1.5"
+    ]
+  },
+  {
+    "id": "E05",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports delay and requests compensation.",
+      "disruption": "delay"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.4.1"
+    ]
+  },
+  {
+    "id": "E06",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports denied boarding and requests compensation.",
+      "disruption": "denied_boarding"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.2.2"
+    ]
+  },
+  {
+    "id": "E07",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports downgrading and requests compensation.",
+      "disruption": "downgrading"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.5.1"
+    ]
+  },
+  {
+    "id": "E08",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 80,
+      "alternate_flight_provided": true,
+      "alternate_accepted": true,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "request_further_evidence",
+    "supporting_passages": [
+      "CAR-3.3.2",
+      "CAR-3.8.1"
+    ]
+  },
+  {
+    "id": "E09",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports delay and requests compensation.",
+      "disruption": "delay"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.4.1"
+    ]
+  },
+  {
+    "id": "E10",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": true,
+      "free_text": "Passenger reports denied boarding and requests compensation.",
+      "disruption": "denied_boarding"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.2.2"
+    ]
+  },
+  {
+    "id": "E11",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports downgrading and requests compensation.",
+      "disruption": "downgrading"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.5.1"
+    ]
+  },
+  {
+    "id": "E12",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 120,
+      "alternate_flight_provided": true,
+      "alternate_accepted": true,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "request_further_evidence",
+    "supporting_passages": [
+      "CAR-3.3.2",
+      "CAR-3.8.1"
+    ]
+  },
+  {
+    "id": "E13",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports delay and requests compensation.",
+      "disruption": "delay"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.4.1"
+    ]
+  },
+  {
+    "id": "E14",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports denied boarding and requests compensation.",
+      "disruption": "denied_boarding"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.2.2"
+    ]
+  },
+  {
+    "id": "E15",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": true,
+      "free_text": "Passenger reports downgrading and requests compensation.",
+      "disruption": "downgrading"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.5.1"
+    ]
+  },
+  {
+    "id": "E16",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 160,
+      "alternate_flight_provided": true,
+      "alternate_accepted": true,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "request_further_evidence",
+    "supporting_passages": [
+      "CAR-3.3.2",
+      "CAR-3.8.1"
+    ]
+  },
+  {
+    "id": "E17",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports delay and requests compensation.",
+      "disruption": "delay"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.4.1"
+    ]
+  },
+  {
+    "id": "E18",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports denied boarding and requests compensation.",
+      "disruption": "denied_boarding"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.2.2"
+    ]
+  },
+  {
+    "id": "E19",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 90,
+      "alternate_flight_provided": false,
+      "alternate_accepted": false,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports downgrading and requests compensation.",
+      "disruption": "downgrading"
+    },
+    "expected_position": "human_escalation",
+    "supporting_passages": [
+      "CAR-3.5.1"
+    ]
+  },
+  {
+    "id": "E20",
+    "claim": {
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30",
+      "block_time_minutes": 120,
+      "notice_minutes": 200,
+      "alternate_flight_provided": true,
+      "alternate_accepted": true,
+      "passenger_reported_at_airport": true,
+      "contact_details_provided": true,
+      "cause": "operational",
+      "cause_disputed": false,
+      "free_text": "Passenger reports cancellation and requests compensation.",
+      "disruption": "cancellation"
+    },
+    "expected_position": "request_further_evidence",
+    "supporting_passages": [
+      "CAR-3.3.2",
+      "CAR-3.8.1"
+    ]
+  }
+]

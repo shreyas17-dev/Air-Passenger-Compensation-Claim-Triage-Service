@@ -1,0 +1,204 @@
+{
+  "id": null,
+  "uid": "claim-triage",
+  "title": "Claim Triage Operations",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Run latency (p50 / p95, ms)",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "claim_latency_ms_p50",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "claim_latency_ms_p95",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Throughput (completed runs/s)",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(claim_runs_total[1m])",
+          "legendFormat": "runs/s"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Error rate",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(claim_runs_failed_total[5m]) / clamp_min(rate(claim_runs_total[5m]), 0.001)",
+          "legendFormat": "failed / completed"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Queue depth and availability",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "claim_queue_depth",
+          "legendFormat": "queue depth"
+        },
+        {
+          "expr": "up{job=\"claim-api\"}",
+          "legendFormat": "API up"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Container CPU",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total[1m])",
+          "legendFormat": "{{name}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Container memory (bytes)",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "container_memory_working_set_bytes",
+          "legendFormat": "{{name}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Live quality sample means",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "live_quality_groundedness",
+          "legendFormat": "groundedness"
+        },
+        {
+          "expr": "live_quality_context_relevance",
+          "legendFormat": "context relevance"
+        },
+        {
+          "expr": "live_quality_faithfulness",
+          "legendFormat": "faithfulness"
+        },
+        {
+          "expr": "live_quality_hallucination_rate",
+          "legendFormat": "hallucination rate"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Per-agent success, steps, tools, latency",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "agent_success_rate",
+          "legendFormat": "success {{agent}}"
+        },
+        {
+          "expr": "agent_avg_steps",
+          "legendFormat": "steps {{agent}}"
+        },
+        {
+          "expr": "agent_avg_tool_calls",
+          "legendFormat": "tools {{agent}}"
+        },
+        {
+          "expr": "agent_avg_latency_ms",
+          "legendFormat": "latency ms {{agent}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Retrieval cache and model cost",
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(retrieval_cache_hits_total[1m])",
+          "legendFormat": "cache hits/s"
+        },
+        {
+          "expr": "rate(retrieval_cache_misses_total[1m])",
+          "legendFormat": "cache misses/s"
+        },
+        {
+          "expr": "model_cost_usd_per_100_runs",
+          "legendFormat": "USD / 100 runs"
+        }
+      ]
+    }
+  ]
+}
