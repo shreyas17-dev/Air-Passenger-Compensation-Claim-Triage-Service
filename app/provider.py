@@ -5,8 +5,9 @@ import time
 
 import httpx
 
-from .main import REDIS_URL
+from .main import REDIS_URL, record_event
 from redis import Redis
+from .worker_metrics import AGENT_RETRIES
 
 r = Redis.from_url(REDIS_URL, decode_responses=True)
 
@@ -18,6 +19,7 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
         raise RuntimeError("provider circuit is open")
     deadline = call_started + float(os.getenv("MODEL_MAX_TOTAL_SECONDS", "12"))
     per_try_timeout = float(os.getenv("MODEL_TIMEOUT_SECONDS", "8"))
+    retry_count = 0
     prompt_version = os.getenv("PROMPT_VERSION", "triage-v2")
     prompt_path = os.path.join(os.path.dirname(__file__), "..", "prompts", f"{prompt_version}.txt")
     try:
@@ -44,7 +46,14 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
             except Exception as exc:
                 err = exc
                 if attempt < 2:
-                    time.sleep(min(.2 * (2 ** attempt), .8, max(0, deadline-time.monotonic())))
+                    retry_count += 1
+                    r.incr("agent:retries:entitlement_reviewer")
+                    r.sadd("agent:retried_runs:entitlement_reviewer", run_id)
+                    AGENT_RETRIES.labels("entitlement_reviewer").inc()
+                    delay = min(.2 * (2 ** attempt), .8, max(0, deadline-time.monotonic()))
+                    record_event(run_id, "provider_retry", agent="entitlement_reviewer", step=step_name,
+                                 attempt=attempt+1, error=type(exc).__name__, backoff_seconds=delay)
+                    time.sleep(delay)
         if response is None:
             failures = r.incr("provider:failures")
             if failures >= 3:
@@ -79,7 +88,14 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
             except Exception as exc:
                 err = exc
                 if attempt < 2:
-                    time.sleep(min(.25 * (2 ** attempt), 1.0, max(0, deadline-time.monotonic())))
+                    retry_count += 1
+                    r.incr("agent:retries:entitlement_reviewer")
+                    r.sadd("agent:retried_runs:entitlement_reviewer", run_id)
+                    AGENT_RETRIES.labels("entitlement_reviewer").inc()
+                    delay = min(.25 * (2 ** attempt), 1.0, max(0, deadline-time.monotonic()))
+                    record_event(run_id, "provider_retry", agent="entitlement_reviewer", step=step_name,
+                                 attempt=attempt+1, error=type(exc).__name__, backoff_seconds=delay)
+                    time.sleep(delay)
         if response is None:
             failures = r.incr("provider:failures")
             if failures >= 3:
@@ -95,4 +111,5 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
     r.set("provider:open", "true")
     return {"output": response, "prompt_version": prompt_version, "provider": provider,
             "prompt_tokens": in_tokens, "completion_tokens": out_tokens, "cost": cost, "step": step_name,
+            "retry_count": retry_count,
             "latency_ms": round((time.monotonic()-call_started)*1000, 2)}

@@ -2,6 +2,7 @@ import json
 import re
 import hashlib
 import os
+from collections import defaultdict
 from pathlib import Path
 from redis import Redis
 
@@ -18,7 +19,24 @@ _corpus_version = hashlib.sha256(json.dumps(CORPUS, sort_keys=True).encode()).he
 
 def classify_extract(claim):
     text = (claim.get("free_text") or "").lower()
+    patterns = {
+        "cancellation": r"\b(cancelled|canceled|cancellation)\b",
+        "denied_boarding": r"\b(denied boarding|bumped|not allowed to board)\b",
+        "delay": r"\b(delayed|delay)\b",
+        "downgrading": r"\b(downgraded|downgrading|lower class)\b",
+    }
+    mentioned = [category for category, pattern in patterns.items() if re.search(pattern, text)]
+    category_conflict = bool(len(mentioned) > 1 or (mentioned and claim.get("disruption") not in mentioned))
+    out_of_scope_patterns = (
+        r"\b(lost|missing|damaged) (?:baggage|luggage|bag)\b",
+        r"\b(baggage|luggage) (?:claim|compensation|refund)\b",
+        r"\b(frequent flyer|loyalty) miles\b",
+        r"\bseat upgrade\b",
+    )
+    out_of_scope = any(re.search(pattern, text) for pattern in out_of_scope_patterns)
     return {"agent": "intake", "disruption": claim.get("disruption"),
+            "text_categories": mentioned, "classification_conflict": category_conflict,
+            "out_of_scope": out_of_scope,
             "reported_at_airport": claim.get("passenger_reported_at_airport"),
             "notice_minutes": claim.get("notice_minutes"),
             "alternate_provided": claim.get("alternate_flight_provided"),
@@ -94,6 +112,21 @@ def adjudicate(claim, facts, retrieved):
             p = byid[cid]
             citations.append({"source_id": cid, "clause": p["clause"], "quote": p["text"],
                               "source": p.get("source"), "source_url": p.get("source_url"), "page": p.get("page")})
+
+    if facts.get("out_of_scope"):
+        return make_result("human_escalation", "The passenger's account concerns a service outside this compensation corpus. An officer must route it to the appropriate process.", "human_review", "Claim outside supported corpus", citations)
+    if facts.get("classification_conflict"):
+        return make_result("human_escalation", "The category selected in the claim differs from the disruption described in the passenger's account. An officer must confirm the category.", "human_review", "Disruption classification conflict", citations)
+
+    clauses = defaultdict(set)
+    for passage in retrieved:
+        clauses[passage.get("clause")].add(passage.get("text", "").strip())
+    conflicting = {clause for clause, texts in clauses.items() if clause and len(texts) > 1}
+    if conflicting:
+        for passage in retrieved:
+            if passage.get("clause") in conflicting:
+                cite(passage["id"])
+        return make_result("human_escalation", "Retrieved sources contain different text for the same provision. An officer must resolve the source conflict.", "human_review", "Conflicting provision text", citations)
 
     if claim.get("cause_disputed"):
         cite("CAR-1.4-1.5")

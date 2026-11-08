@@ -1,6 +1,8 @@
 """A small bounded LangGraph agent that selects retrieval tools from claim facts."""
 import json
+import os
 import re
+import time
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import AIMessage, BaseMessage
@@ -9,7 +11,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
-from .agents import CORPUS
+from .agents import CORPUS, search_corpus
 
 
 class IntakeState(TypedDict):
@@ -20,10 +22,8 @@ class IntakeState(TypedDict):
 
 @tool
 def corpus_search(query: str) -> str:
-    """Search candidate clauses for a natural-language query."""
-    terms = set(query.lower().split())
-    ranked = sorted(((sum(t in (p["text"]+" "+" ".join(p["tags"])).lower() for t in terms), p) for p in CORPUS), key=lambda x: -x[0])
-    return json.dumps([p for score, p in ranked[:8] if score])
+    """Search candidate clauses with the hybrid lexical/FAISS retriever."""
+    return json.dumps(search_corpus(query, strategy="agent_hybrid", limit=8))
 
 
 @tool
@@ -103,9 +103,17 @@ def next_step(state: IntakeState):
     return "tools" if isinstance(msg, AIMessage) and msg.tool_calls else END
 
 
+def bounded_tools(state: IntakeState):
+    started = time.monotonic()
+    output = TOOL_NODE.invoke(state)
+    if time.monotonic()-started > float(os.getenv("AGENT_TOOL_TIMEOUT_SECONDS", "3")):
+        raise TimeoutError("agent tool-call deadline exceeded")
+    return output
+
+
 builder = StateGraph(IntakeState)
 builder.add_node("agent", planner)
-builder.add_node("tools", TOOL_NODE)
+builder.add_node("tools", bounded_tools)
 builder.set_entry_point("agent")
 builder.add_conditional_edges("agent", next_step, {"tools": "tools", END: END})
 builder.add_edge("tools", "agent")

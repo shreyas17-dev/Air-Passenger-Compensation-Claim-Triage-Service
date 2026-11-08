@@ -48,25 +48,25 @@ async def quarantine_validation_error(request: Request, exc: RequestValidationEr
 
 
 class Claim(BaseModel):
-    model_config = ConfigDict(allow_inf_nan=False)
+    model_config = ConfigDict(allow_inf_nan=False, extra="forbid")
 
     claim_id: str | None = Field(default=None, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     disruption: Literal["denied_boarding", "cancellation", "delay", "downgrading"]
     flight_number: str = Field(min_length=2, max_length=12, pattern=r"^[A-Za-z0-9-]+$")
     scheduled_departure: datetime
     actual_departure: datetime | None = None
-    block_time_minutes: int = Field(ge=1, le=1800)
-    notice_minutes: int | None = Field(default=None, ge=0, le=525600)
-    alternate_flight_provided: bool | None = None
-    alternate_accepted: bool | None = None
-    alternate_delay_minutes: int | None = Field(default=None, ge=0, le=10080)
-    booked_one_way_basic_fare_inr: float | None = Field(default=None, ge=0, le=10000000)
-    airline_fuel_charge_inr: float | None = Field(default=None, ge=0, le=1000000)
-    passenger_reported_at_airport: bool | None = None
-    contact_details_provided: bool | None = None
-    cause: str | None = Field(default=None, max_length=2000)
-    cause_disputed: bool = False
-    free_text: str = Field(min_length=1, max_length=5000)
+    block_time_minutes: int = Field(ge=1, le=1800, strict=True)
+    notice_minutes: int | None = Field(default=None, ge=0, le=525600, strict=True)
+    alternate_flight_provided: bool | None = Field(default=None, strict=True)
+    alternate_accepted: bool | None = Field(default=None, strict=True)
+    alternate_delay_minutes: int | None = Field(default=None, ge=0, le=10080, strict=True)
+    booked_one_way_basic_fare_inr: float | None = Field(default=None, ge=0, le=10000000, strict=True)
+    airline_fuel_charge_inr: float | None = Field(default=None, ge=0, le=1000000, strict=True)
+    passenger_reported_at_airport: bool | None = Field(default=None, strict=True)
+    contact_details_provided: bool | None = Field(default=None, strict=True)
+    cause: str | None = Field(default=None, max_length=2000, strict=True)
+    cause_disputed: bool = Field(default=False, strict=True)
+    free_text: str = Field(min_length=1, max_length=5000, strict=True)
 
     @model_validator(mode="after")
     def cross_fields(self):
@@ -95,11 +95,17 @@ def now():
 
 
 def record_event(run_id, event, **fields):
-    data = {"ts": now(), "run_id": run_id, "event": event, **fields}
+    data = {"ts": now(), "run_id": run_id, "correlation_id": fields.get("correlation_id", run_id), "event": event, **fields}
     raw = json.dumps(data)
     redis.rpush(f"events:{run_id}", raw)
     redis.rpush("events:all", raw)
     logging.info(raw)
+    if fields.get("agent") and fields.get("latency_ms") is not None:
+        agent = fields["agent"]
+        step = fields.get("step", event)
+        metric_key = f"agent:step-latencies:{agent}:{step}"
+        redis.lpush(metric_key, float(fields["latency_ms"]))
+        redis.ltrim(metric_key, 0, 999)
 
 
 @app.get("/healthz")
@@ -112,7 +118,8 @@ def health():
 
 
 @app.post("/v1/claims", status_code=202)
-def submit(claim: Claim, x_client_id: str = Header(default="anonymous")):
+def submit(claim: Claim, x_client_id: str = Header(default="anonymous", min_length=1, max_length=128,
+                                                       pattern=r"^[A-Za-z0-9_.:@-]+$")):
     free_fields = {"free_text": claim.free_text, "cause": claim.cause or ""}
     injection = re.compile(r"(?i)(ignore\s+(all|previous|prior)\s+instructions|reveal\s+(the\s+)?system prompt|override\s+(the\s+)?rules|disregard.{0,40}instructions|developer message|jailbreak)")
     toxicity = re.compile(r"(?i)\b(fuck|shit|bitch|asshole|bastard)\b")
@@ -134,9 +141,12 @@ def submit(claim: Claim, x_client_id: str = Header(default="anonymous")):
     payload = claim.model_dump(mode="json")
     trace_context = {}
     propagate.inject(trace_context)
-    redis.hset(f"run:{rid}", mapping={"status": "queued", "created_at": now(), "client_id": x_client_id, "claim": json.dumps(payload)})
-    redis.xadd("claim_queue", {"payload": json.dumps({"run_id": rid, "claim": payload,
-        "trace_context": trace_context, "submitted_monotonic": time.monotonic()})})
+    with redis.pipeline(transaction=True) as pipeline:
+        pipeline.hset(f"run:{rid}", mapping={"status": "queued", "created_at": now(), "client_id": x_client_id, "claim": json.dumps(payload)})
+        pipeline.xadd("claim_queue", {"payload": json.dumps({"run_id": rid, "claim": payload,
+            "trace_context": trace_context, "submitted_monotonic": time.monotonic()})})
+        pipeline.execute()
+    redis.incr("runs:submitted")
     record_event(rid, "submitted", correlation_id=rid)
     return {"run_id": rid, "status": "queued", "status_url": f"/v1/runs/{rid}", "correlation_id": rid}
 
@@ -160,6 +170,7 @@ def trace(run_id: str):
     if not state:
         raise HTTPException(404, "run not found")
     return {"run_id": run_id, "claim": json.loads(state["claim"]),
+            "result": json.loads(state["result"]) if state.get("result") else None,
             "events": [json.loads(x) for x in redis.lrange(f"events:{run_id}", 0, -1)]}
 
 
@@ -177,11 +188,19 @@ def feedback(run_id: str, body: Feedback):
 @app.get("/metrics")
 def metrics():
     total = int(redis.llen("events:all"))
-    queue = int(redis.xlen("claim_queue")) + int(redis.xlen("review_queue")) if redis.exists("claim_queue") and redis.type("claim_queue") == "stream" else int(redis.llen("claim_queue")) + int(redis.llen("review_queue"))
+    def pending(stream, group):
+        try:
+            return int(redis.xpending(stream, group).get("pending", 0))
+        except Exception:
+            return 0
+    queue = pending("claim_queue", "intake") + pending("review_queue", "review")
     done = int(redis.get("runs:completed") or 0)
     failed = int(redis.get("runs:failed") or 0)
+    submitted = int(redis.get("runs:submitted") or 0)
+    review_fallbacks = int(redis.get("agent:failures:entitlement_reviewer") or 0)
     body = ("# TYPE claim_runs_total counter\n" f"claim_runs_total {done}\n"
-            f"claim_runs_failed_total {failed}\nclaim_queue_depth {queue}\n"
+            f"claim_runs_submitted_total {submitted}\nclaim_runs_failed_total {failed}\n"
+            f"claim_runs_fallback_total {review_fallbacks}\nclaim_queue_depth {queue}\n"
             f"claim_events_total {total}\nclaim_uptime_seconds {int(time.monotonic()-START)}\n")
     try:
         manifest = json.loads((ROOT / "corpus" / "manifest.json").read_text(encoding="utf8"))
@@ -191,6 +210,14 @@ def metrics():
         body += f"corpus_build_timestamp_seconds {datetime.fromisoformat(manifest['built_at'].replace('Z','+00:00')).timestamp() if manifest.get('built_at') else 0}\n"
     except Exception:
         body += "corpus_chunk_count 0\ncorpus_ingest_seconds 0\ncorpus_ingest_chunks_per_second 0\ncorpus_build_timestamp_seconds 0\n"
+    try:
+        index_manifest = json.loads((ROOT / "corpus" / "faiss_index" / "manifest.json").read_text(encoding="utf8"))
+        body += f"corpus_index_chunk_count {int(index_manifest.get('chunk_count', 0))}\n"
+        body += f"corpus_index_build_seconds {float(index_manifest.get('build_seconds', 0))}\n"
+        body += f"corpus_index_vectors_per_second {float(index_manifest.get('vectors_per_second', 0))}\n"
+        body += f"corpus_index_build_timestamp_seconds {datetime.fromisoformat(index_manifest['built_at'].replace('Z','+00:00')).timestamp() if index_manifest.get('built_at') else 0}\n"
+    except Exception:
+        body += "corpus_index_chunk_count 0\ncorpus_index_build_seconds 0\ncorpus_index_vectors_per_second 0\ncorpus_index_build_timestamp_seconds 0\n"
     for role in ("intake", "entitlement_reviewer"):
         success = int(redis.get(f"agent:success:{role}") or 0)
         errors = int(redis.get(f"agent:failures:{role}") or 0)
@@ -203,6 +230,17 @@ def metrics():
         body += f'agent_avg_tool_calls{{agent="{role}"}} {float(m.get("tool_calls", 0))/runs:.4f}\n'
         body += f'agent_avg_latency_ms{{agent="{role}"}} {float(m.get("latency_ms_total", 0))/runs:.4f}\n'
         body += f'agent_uptime_seconds{{agent="{role}"}} {int(redis.get("agent:uptime:"+role) or 0)}\n'
+        retries = int(redis.get(f"agent:retries:{role}") or 0)
+        body += f'agent_retries_total{{agent="{role}"}} {retries}\n'
+        retried_runs = int(redis.scard(f"agent:retried_runs:{role}"))
+        body += f'agent_retry_rate{{agent="{role}"}} {retried_runs/attempts:.4f}\n'
+        for key in redis.scan_iter(f"agent:step-latencies:{role}:*"):
+            step = key.rsplit(":", 1)[-1]
+            latencies = sorted(float(value) for value in redis.lrange(key, 0, -1))
+            for percentile, q in (("p50", .50), ("p95", .95)):
+                value = latencies[min(len(latencies)-1, max(0, math.ceil(q*len(latencies))-1))] if latencies else 0
+                label = step.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+                body += f'agent_step_latency_ms_{percentile}{{agent="{role}",step="{label}"}} {value:.4f}\n'
     body += f"feedback_positive_total {int(redis.get('feedback:true') or 0)}\nfeedback_negative_total {int(redis.get('feedback:false') or 0)}\n"
     samples = sorted(float(x) for x in redis.lrange("latencies:run", 0, -1))
     def pct(q):
@@ -211,6 +249,17 @@ def metrics():
     body += f"model_prompt_tokens_total {int(redis.hget('tokens:prompt','count') or 0)}\nmodel_completion_tokens_total {int(redis.hget('tokens:completion','count') or 0)}\n"
     cost = float(redis.hget('cost:total','usd') or 0)
     body += f"model_cost_usd_total {cost:.8f}\nmodel_cost_usd_per_100_runs {cost*100/max(done,1):.8f}\n"
+    costs_by_step = {step: float(value) for step, value in redis.hgetall("cost:by-step").items()}
+    for step, value in costs_by_step.items():
+        body += f'model_cost_step_usd{{step="{step}"}} {value:.8f}\n'
+    if costs_by_step:
+        top_step, top_cost = max(costs_by_step.items(), key=lambda pair: pair[1])
+        body += f'model_cost_largest_step_usd{{step="{top_step}"}} {top_cost:.8f}\n'
+    else:
+        body += 'model_cost_largest_step_usd{step="none"} 0\n'
+    for key, value in redis.hgetall("tokens:by-step").items():
+        usage, step = key.split(":", 1)
+        body += f'model_{usage}_tokens_step_total{{step="{step}"}} {int(value)}\n'
     body += f"retrieval_cache_hits_total {int(redis.get('retrieval:cache_hits') or 0)}\nretrieval_cache_misses_total {int(redis.get('retrieval:cache_misses') or 0)}\n"
     samples = [json.loads(x) for x in redis.lrange("quality:samples", 0, 19)]
     for metric in ("groundedness", "context_relevance", "faithfulness", "hallucination_rate"):
@@ -222,6 +271,19 @@ def metrics():
 @app.get("/v1/quality")
 def quality():
     return {"samples": [json.loads(x) for x in redis.lrange("quality:samples", 0, 99)]}
+
+
+@app.get("/v1/costs")
+def costs():
+    completed = int(redis.get("runs:completed") or 0)
+    total = float(redis.hget("cost:total", "usd") or 0)
+    by_step = {step: float(value) for step, value in redis.hgetall("cost:by-step").items()}
+    return {"currency": "USD", "runs_completed": completed, "total_cost": total,
+            "cost_per_100_runs": total*100/max(completed, 1), "by_step": by_step,
+            "tokens_by_step": redis.hgetall("tokens:by-step"),
+            "largest_cost_step": max(by_step, key=by_step.get) if by_step else None,
+            "prompt_tokens": int(redis.hget("tokens:prompt", "count") or 0),
+            "completion_tokens": int(redis.hget("tokens:completion", "count") or 0)}
 
 
 @app.get("/", response_class=HTMLResponse)
