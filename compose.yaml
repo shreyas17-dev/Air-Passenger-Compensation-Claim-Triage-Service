@@ -24,6 +24,9 @@
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       WORKER_MODE: "true"
       SERVICE_ROLE: intake-agent
+      AGENT_METRICS_PORT: 9101
+      AGENT_MAX_WALL_SECONDS: ${AGENT_MAX_WALL_SECONDS:-20}
+      AGENT_TOOL_TIMEOUT_SECONDS: ${AGENT_TOOL_TIMEOUT_SECONDS:-3}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
       MODEL_PROVIDER: ${MODEL_PROVIDER:-stub}
       STUB_PROVIDER_URL: ${STUB_PROVIDER_URL:-http://model-stub:8090/v1/advise}
@@ -41,7 +44,7 @@
       model-stub: { condition: service_healthy }
     volumes: ["corpus_data:/srv/corpus"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import redis,os; redis.Redis.from_url(os.environ['REDIS_URL']).ping()"]
+      test: ["CMD", "python", "-c", "import urllib.request,redis,os; urllib.request.urlopen('http://localhost:9101/metrics'); redis.Redis.from_url(os.environ['REDIS_URL']).ping()"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -51,6 +54,7 @@
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SERVICE_ROLE: review-agent
+      AGENT_METRICS_PORT: 9102
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
       MODEL_PROVIDER: ${MODEL_PROVIDER:-stub}
       STUB_PROVIDER_URL: ${STUB_PROVIDER_URL:-http://model-stub:8090/v1/advise}
@@ -68,7 +72,7 @@
       model-stub: { condition: service_healthy }
     volumes: ["corpus_data:/srv/corpus"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import redis,os; redis.Redis.from_url(os.environ['REDIS_URL']).ping()"]
+      test: ["CMD", "python", "-c", "import urllib.request,redis,os; urllib.request.urlopen('http://localhost:9102/metrics'); redis.Redis.from_url(os.environ['REDIS_URL']).ping()"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -92,7 +96,7 @@
       api: { condition: service_healthy }
     volumes: ["corpus_data:/srv/corpus"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -124,14 +128,23 @@
     volumes: ["./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
     depends_on:
       api: { condition: service_healthy }
+      redis-exporter: { condition: service_started }
     healthcheck:
       test: ["CMD", "/bin/prometheus", "--version"]
       interval: 30s
       timeout: 5s
       retries: 3
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.66.0
+    environment:
+      REDIS_ADDR: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      redis: { condition: service_healthy }
   grafana:
     image: grafana/grafana:11.3.0
     ports: ["3000:3000"]
+    environment:
+      GF_METRICS_ENABLED: "true"
     volumes:
       - "./monitoring/grafana.ini:/etc/grafana/grafana.ini:ro"
       - "./monitoring/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro"

@@ -5,6 +5,36 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: [api:8000]
+  - job_name: intake-agent
+    dns_sd_configs:
+      - names: [intake-agent]
+        type: A
+        port: 9101
+        refresh_interval: 15s
+  - job_name: review-agent
+    dns_sd_configs:
+      - names: [review-agent]
+        type: A
+        port: 9102
+        refresh_interval: 15s
+  - job_name: dashboard
+    static_configs:
+      - targets: [dashboard:8080]
+  - job_name: model-stub
+    static_configs:
+      - targets: [model-stub:8090]
+  - job_name: redis
+    static_configs:
+      - targets: [redis-exporter:9121]
+  - job_name: jaeger
+    static_configs:
+      - targets: [jaeger:14269]
+  - job_name: grafana
+    static_configs:
+      - targets: [grafana:3000]
+  - job_name: prometheus
+    static_configs:
+      - targets: [prometheus:9090]
   - job_name: containers
     static_configs:
       - targets: [cadvisor:8080]

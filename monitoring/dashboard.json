@@ -57,8 +57,8 @@
       },
       "targets": [
         {
-          "expr": "rate(claim_runs_failed_total[5m]) / clamp_min(rate(claim_runs_total[5m]), 0.001)",
-          "legendFormat": "failed / completed"
+          "expr": "(rate(claim_runs_failed_total[5m]) + rate(claim_runs_fallback_total[5m])) / clamp_min(rate(claim_runs_submitted_total[5m]), 0.001)",
+          "legendFormat": "failed or fallback / submitted"
         }
       ]
     },
@@ -172,6 +172,10 @@
         {
           "expr": "agent_avg_latency_ms",
           "legendFormat": "latency ms {{agent}}"
+        },
+        {
+          "expr": "agent_retry_rate",
+          "legendFormat": "runs retried {{agent}}"
         }
       ]
     },
@@ -197,6 +201,77 @@
         {
           "expr": "model_cost_usd_per_100_runs",
           "legendFormat": "USD / 100 runs"
+        },
+        {
+          "expr": "model_cost_largest_step_usd",
+          "legendFormat": "largest step {{step}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Per-agent step latency (p50 / p95, ms)",
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "agent_step_latency_ms_p50",
+          "legendFormat": "p50 {{agent}} / {{step}}"
+        },
+        {
+          "expr": "agent_step_latency_ms_p95",
+          "legendFormat": "p95 {{agent}} / {{step}}"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Corpus freshness and index throughput",
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "corpus_build_timestamp_seconds",
+          "legendFormat": "source ingest time"
+        },
+        {
+          "expr": "corpus_index_build_timestamp_seconds",
+          "legendFormat": "index build time"
+        },
+        {
+          "expr": "corpus_index_vectors_per_second",
+          "legendFormat": "new vectors per second"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Service availability and uptime",
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}} available"
+        },
+        {
+          "expr": "container_start_time_seconds",
+          "legendFormat": "{{name}} start time"
         }
       ]
     }

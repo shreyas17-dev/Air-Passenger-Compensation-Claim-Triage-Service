@@ -9,7 +9,7 @@ class ClaimUser(HttpUser):
 
     @task
     def submit_and_wait(self):
-        started = time.monotonic()
+        submitted_at = time.monotonic()
         client_id = f"load-{uuid.uuid4()}"
         claim = {"disruption": "cancellation", "flight_number": "AI101",
                  "scheduled_departure": "2026-11-01T12:00:00+05:30", "block_time_minutes": 120,
@@ -22,17 +22,16 @@ class ClaimUser(HttpUser):
                 response.failure(f"submit HTTP {response.status_code}")
                 return
             run_id = response.json()["run_id"]
-        started = time.monotonic()
-        while time.monotonic() - started < 30:
+        while time.monotonic() - submitted_at < 30:
             poll = self.client.get(f"/v1/runs/{run_id}", name="complete claim run")
             result = poll.json()
             if result.get("status") == "completed":
                 poll.success()
                 self.environment.events.request.fire(request_type="RUN", name="submission-to-result",
-                    response_time=(time.monotonic()-started)*1000, response_length=0, exception=None)
+                    response_time=(time.monotonic()-submitted_at)*1000, response_length=0, exception=None)
                 return
             if result.get("status") == "failed":
                 poll.failure("run failed")
                 return
             time.sleep(.1)
-        self.environment.events.request.fire(request_type="RUN", name="submit-to-result timeout", response_time=30000, response_length=0, exception=TimeoutError())
+        self.environment.events.request.fire(request_type="RUN", name="submission-to-result timeout", response_time=30000, response_length=0, exception=TimeoutError())
