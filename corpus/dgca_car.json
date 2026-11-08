@@ -1,7 +1,7 @@
 {
   "source": "DGCA CAR Rev. 4 and Air India Passenger Charter",
   "source_url": "https://www.dgca.gov.in/digigov-portal/Upload?attachId=we1PSlOuQhYdHcwKKrm7ew%3D%3D&flag=iframeAttachView",
-  "built_at": "2026-10-29T20:29:19.524314+00:00",
+  "built_at": "2026-11-08T08:09:09.907332+00:00",
   "sources": [
     {
       "file": "dgca_car_rev4.pdf",
@@ -25,6 +25,9 @@
         "notice",
         "alternate flight",
         "refund"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -39,6 +42,9 @@
         "block time",
         "refund",
         "facilities"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -52,6 +58,9 @@
         "compensation exception",
         "alternate flight",
         "facilities"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -64,6 +73,9 @@
         "extraordinary circumstances",
         "exception",
         "cause"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -76,6 +88,9 @@
         "force majeure",
         "exception",
         "exemption"
+      ],
+      "pages": [
+        1
       ]
     },
     {
@@ -87,6 +102,9 @@
         "denied boarding",
         "alternate flight",
         "compensation"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -98,6 +116,9 @@
         "delay",
         "block time",
         "facilities"
+      ],
+      "pages": [
+        5
       ]
     },
     {
@@ -108,6 +129,9 @@
       "tags": [
         "downgrading",
         "reimbursement"
+      ],
+      "pages": [
+        5
       ]
     },
     {
@@ -121,6 +145,9 @@
         "refreshments",
         "waiting time",
         "hotel"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -132,6 +159,9 @@
         "grievance",
         "Air Sewa",
         "escalation"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -172,6 +202,9 @@
         "take",
         "traffic",
         "travelers"
+      ],
+      "pages": [
+        1
       ]
     },
     {
@@ -212,6 +245,9 @@
         "scheduled",
         "services",
         "shall"
+      ],
+      "pages": [
+        1
       ]
     },
     {
@@ -252,6 +288,9 @@
         "performs",
         "person",
         "question"
+      ],
+      "pages": [
+        1
       ]
     },
     {
@@ -275,6 +314,9 @@
         "operating",
         "where",
         "would"
+      ],
+      "pages": [
+        1
       ]
     },
     {
@@ -283,7 +325,7 @@
       "page": 2,
       "source": "dgca_car_rev4.pdf",
       "source_url": "https://www.dgca.gov.in/digigov-portal/Upload?attachId=we1PSlOuQhYdHcwKKrm7ew%3D%3D&flag=iframeAttachView",
-      "text": "1.5 Additionally, airlines would also not be liable to pay any compensation in respect of cancellations and delays clearly attributable to Air Traffic Control (ATC), meteorological conditions, security risks, or any other causes that are beyond the control of the airline but which affect their ability to operate flights on schedule. Extraordinary circumstances should be deemed to exist where the impact of an air traffic management decision in relation to a particular aircraft or several aircraft on a particular day, gives rise to a long delay or delays, an overnight delay, or the cancellation of one or more flights by that aircraft, and which could not be avoided even though the airline concerned had taken all reasonable measures to avoid or overcome of the impact of the relevant factor and, therefore, the delays or cancellations.",
+      "text": "1.5 Additionally, airlines would also not be liable to pay any compensation in respect of cancellations and delays clearly attributable to Air Traffic Control (ATC), meteorological conditions, security risks, or any other causes that are beyond the control of the airline but which affect their ability to operate flights on schedule. Extraordinary circumstances should be deemed to exist where the impact of an air traffic management decision in relation to a particular aircraft or several aircraft on a particular day, gives rise to a long delay or delays, an overnight delay, or the cancellation of one or more flights by that aircraft, and which could not be avoided even though the airline concerned had taken all reasonable measures to avoid or overcome of the impact of the relevant factor and, therefore, the delays or cancellations. 1.5 which could not have been avoided even if all reasonable measures had been taken.",
       "tags": [
         "ability",
         "additionally",
@@ -295,6 +337,7 @@
         "attributable",
         "avoid",
         "avoided",
+        "been",
         "beyond",
         "cancellation",
         "cancellations",
@@ -313,8 +356,11 @@
         "even",
         "exist",
         "extraordinary",
-        "factor",
-        "flights"
+        "factor"
+      ],
+      "pages": [
+        2,
+        6
       ]
     },
     {
@@ -341,6 +387,9 @@
         "this",
         "under",
         "with"
+      ],
+      "pages": [
+        2
       ]
     },
     {
@@ -357,6 +406,9 @@
         "scheduled",
         "shall",
         "this"
+      ],
+      "pages": [
+        2
       ]
     },
     {
@@ -377,6 +429,9 @@
         "undertaking",
         "valid",
         "with"
+      ],
+      "pages": [
+        2
       ]
     },
     {
@@ -405,6 +460,9 @@
         "that",
         "under",
         "with"
+      ],
+      "pages": [
+        2
       ]
     },
     {
@@ -436,6 +494,9 @@
         "ticket",
         "travel",
         "which"
+      ],
+      "pages": [
+        2
       ]
     },
     {
@@ -470,6 +531,9 @@
         "taken",
         "ticket",
         "time"
+      ],
+      "pages": [
+        2
       ]
     },
     {
@@ -489,6 +553,9 @@
         "series",
         "shall",
         "with"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -529,6 +596,9 @@
         "there",
         "ticket",
         "time"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -555,6 +625,9 @@
         "surrender",
         "their",
         "volunteer"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -577,6 +650,9 @@
         "previously",
         "reserved",
         "which"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -602,6 +678,9 @@
         "time",
         "total",
         "until"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -621,6 +700,9 @@
         "passenger",
         "requirements",
         "ticket"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -635,6 +717,9 @@
         "flights",
         "information",
         "reservations"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -672,6 +757,9 @@
         "through",
         "travel",
         "while"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -712,6 +800,9 @@
         "provide",
         "providing",
         "ranked"
+      ],
+      "pages": [
+        3
       ]
     },
     {
@@ -752,6 +843,9 @@
         "travel",
         "which",
         "will"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -792,6 +886,9 @@
         "offer",
         "other",
         "passengers"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -813,6 +910,9 @@
         "passenger",
         "same",
         "shall"
+      ],
+      "pages": [
+        4
       ]
     },
     {
@@ -832,6 +932,9 @@
         "shall",
         "ticket",
         "with"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -872,6 +975,9 @@
         "time",
         "when",
         "within"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -904,6 +1010,9 @@
         "total",
         "when",
         "with"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -926,25 +1035,9 @@
         "ordinary",
         "para",
         "shall"
-      ]
-    },
-    {
-      "id": "CAR-1.5",
-      "clause": "1.5",
-      "page": 6,
-      "source": "dgca_car_rev4.pdf",
-      "source_url": "https://www.dgca.gov.in/digigov-portal/Upload?attachId=we1PSlOuQhYdHcwKKrm7ew%3D%3D&flag=iframeAttachView",
-      "text": "1.5 which could not have been avoided even if all reasonable measures had been taken.",
-      "tags": [
-        "avoided",
-        "been",
-        "could",
-        "even",
-        "have",
-        "measures",
-        "reasonable",
-        "taken",
-        "which"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -971,6 +1064,9 @@
         "when",
         "whether",
         "with"
+      ],
+      "pages": [
+        6
       ]
     },
     {
@@ -984,6 +1080,9 @@
         "carriers",
         "compensation",
         "foreign"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1010,6 +1109,9 @@
         "shall",
         "their",
         "this"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1035,6 +1137,9 @@
         "travel",
         "vouchers",
         "with"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1048,6 +1153,9 @@
         "facilities",
         "offered",
         "passengers"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1071,6 +1179,9 @@
         "shall",
         "them",
         "with"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1099,6 +1210,9 @@
         "specified",
         "this",
         "when"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1125,6 +1239,9 @@
         "statutory",
         "under",
         "with"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1152,6 +1269,9 @@
         "that",
         "where",
         "which"
+      ],
+      "pages": [
+        7
       ]
     },
     {
@@ -1192,6 +1312,9 @@
         "information",
         "informed",
         "issuing"
+      ],
+      "pages": [
+        8
       ]
     },
     {
@@ -1223,6 +1346,9 @@
         "shall",
         "their",
         "websites"
+      ],
+      "pages": [
+        8
       ]
     },
     {
@@ -1254,6 +1380,9 @@
         "their",
         "time",
         "website"
+      ],
+      "pages": [
+        8
       ]
     },
     {
@@ -1281,6 +1410,9 @@
         "transparent",
         "unique",
         "with"
+      ],
+      "pages": [
+        8
       ]
     },
     {
@@ -1320,6 +1452,9 @@
         "submit",
         "tenth",
         "with"
+      ],
+      "pages": [
+        8
       ]
     },
     {
@@ -1337,7 +1472,10 @@
       ],
       "source": "Air India published Passenger Charter PDF (web-indexed text excerpt)",
       "source_url": "https://www.airindia.com/content/dam/air-india/pdfs/passenger-charter-know-your-rights.pdf",
-      "source_note": "The Air India-hosted PDF returns the same Section 3, Series M, Part IV clause in its indexed text. The original 12.8 MB PDF could not be downloaded in this environment; this duplicate excerpt is sourced from the searchable official PDF result."
+      "source_note": "The Air India-hosted PDF returns the same Section 3, Series M, Part IV clause in its indexed text. The original 12.8 MB PDF could not be downloaded in this environment; this duplicate excerpt is sourced from the searchable official PDF result.",
+      "pages": [
+        4
+      ]
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-29T20:29:19.524314+00:00",
+  "built_at": "2026-11-08T08:09:09.907332+00:00",
   "sources": [
     {
       "file": "dgca_car_rev4.pdf",
@@ -12,7 +12,7 @@
       "status": "web-indexed official source; original binary unavailable in this environment"
     }
   ],
-  "chunk_count": 53,
+  "chunk_count": 52,
   "ingest_seconds": 0.281,
-  "chunks_per_second": 188.61
+  "chunks_per_second": 185.05
 }

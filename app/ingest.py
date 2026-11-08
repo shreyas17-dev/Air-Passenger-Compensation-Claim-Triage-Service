@@ -13,6 +13,25 @@ ROOT = Path(__file__).resolve().parent.parent
 CORPUS = ROOT / "corpus"
 
 
+def merge_duplicate_clauses(chunks):
+    """Join page-split continuation passages sharing a stable clause ID."""
+    merged = {}
+    for chunk in chunks:
+        chunk = dict(chunk)
+        key = chunk["id"]
+        pages = chunk.get("pages", [chunk.get("page")] if chunk.get("page") else [])
+        if key not in merged:
+            chunk["pages"] = pages
+            merged[key] = chunk
+            continue
+        current = merged[key]
+        if chunk["text"] not in current["text"]:
+            current["text"] = (current["text"].rstrip() + " " + chunk["text"].lstrip()).strip()
+        current["pages"] = sorted(set(current.get("pages", []) + pages))
+        current["tags"] = sorted(set(current.get("tags", []) + chunk.get("tags", [])))[:30]
+    return list(merged.values())
+
+
 def parse_pdf(path: Path):
     doc = fitz.open(path)
     chunks = []
@@ -30,7 +49,7 @@ def parse_pdf(path: Path):
             chunks.append({"id": f"CAR-{cid}" if "dgca_car" in path.stem else f"{path.stem}-{cid}", "clause": cid, "page": page_no,
                            "source": path.name, "source_url": "https://www.dgca.gov.in/digigov-portal/Upload?attachId=we1PSlOuQhYdHcwKKrm7ew%3D%3D&flag=iframeAttachView" if "dgca_car" in path.stem else "https://www.airindia.com/content/dam/air-india/pdfs/passenger-charter-know-your-rights.pdf", "text": section,
                            "tags": sorted(set(re.findall(r"[a-z]{4,}", section.lower())))[:30]})
-    return chunks
+    return merge_duplicate_clauses(chunks)
 
 
 def build(rebuild=False):
@@ -44,11 +63,11 @@ def build(rebuild=False):
     if not chunks:
         raise SystemExit("No text-bearing PDF documents found under corpus/")
     curated_data = json.loads((CORPUS / "dgca_car.json").read_text(encoding="utf8"))
-    curated = curated_data["chunks"]
+    curated = merge_duplicate_clauses(curated_data["chunks"])
     local_names = {s["file"] for s in sources}
     sources.extend(s for s in curated_data.get("sources", []) if s.get("file") not in local_names)
     known = {c["id"] for c in curated}
-    chunks = curated + [c for c in chunks if c["id"] not in known]
+    chunks = merge_duplicate_clauses(curated + [c for c in chunks if c["id"] not in known])
     out = {"source": "DGCA CAR Rev. 4 and Air India Passenger Charter", "source_url": "https://www.dgca.gov.in/digigov-portal/Upload?attachId=we1PSlOuQhYdHcwKKrm7ew%3D%3D&flag=iframeAttachView", "built_at": datetime.now(timezone.utc).isoformat(),
            "sources": sources, "chunks": chunks}
     target = CORPUS / "parsed_corpus.json"
@@ -56,7 +75,9 @@ def build(rebuild=False):
     if target.exists() and not rebuild:
         previous = json.loads(target.read_text(encoding="utf8"))
         if previous.get("sources") == sources:
-            print(json.dumps({"status": "unchanged", "chunks": len(previous["chunks"]), "sources": sources}))
+            from .retrieval import build_index
+            index = build_index()
+            print(json.dumps({"status": "unchanged", "chunks": len(previous["chunks"]), "sources": sources, "index": index}))
             return
     target.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf8")
     (CORPUS / "dgca_car.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf8")
@@ -64,7 +85,9 @@ def build(rebuild=False):
     manifest = {"built_at": out["built_at"], "sources": sources, "chunk_count": len(out["chunks"]),
                 "ingest_seconds": round(elapsed, 3), "chunks_per_second": round(len(out["chunks"])/max(elapsed, .001), 2)}
     (CORPUS / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf8")
-    print(json.dumps({"status": "built", **manifest}))
+    from .retrieval import build_index
+    index = build_index(rebuild=rebuild)
+    print(json.dumps({"status": "built", **manifest, "index": index}))
 
 
 if __name__ == "__main__":

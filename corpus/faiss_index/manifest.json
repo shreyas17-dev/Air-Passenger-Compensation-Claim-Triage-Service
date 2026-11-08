@@ -1,7 +1,13 @@
 {
-  "chunk_count": 53,
+  "chunk_count": 52,
+  "added_chunks": 52,
   "source": "DGCA CAR Rev. 4 and Air India Passenger Charter",
+  "source_sha256": "8567bd1df037a0b24a6db1824230f9014e00cd8a5a4713407902a4a7f177a411",
+  "built_at": "2026-11-08T08:09:17.393215+00:00",
+  "build_seconds": 0.266,
+  "vectors_per_second": 195.49,
   "index": "FAISS",
-  "embedding": "local TF-IDF unigram/bigram",
+  "embedding": "local HashingVectorizer unigram/bigram (16384 fixed features)",
+  "incremental_add_supported": true,
   "rebuildable": true
 }
