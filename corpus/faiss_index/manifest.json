@@ -1,0 +1,7 @@
+{
+  "chunk_count": 53,
+  "source": "DGCA CAR Rev. 4 and Air India Passenger Charter",
+  "index": "FAISS",
+  "embedding": "local TF-IDF unigram/bigram",
+  "rebuildable": true
+}

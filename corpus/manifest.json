@@ -1,0 +1,18 @@
+{
+  "built_at": "2026-10-29T20:29:19.524314+00:00",
+  "sources": [
+    {
+      "file": "dgca_car_rev4.pdf",
+      "sha256": "3b4b50844edc6a46099cce3b94626d29b03f90ccc61318aa1aa2db6d0fa3ff4a",
+      "bytes": 285108
+    },
+    {
+      "file": "Air India published Passenger Charter PDF (web-indexed excerpt only)",
+      "url": "https://www.airindia.com/content/dam/air-india/pdfs/passenger-charter-know-your-rights.pdf",
+      "status": "web-indexed official source; original binary unavailable in this environment"
+    }
+  ],
+  "chunk_count": 53,
+  "ingest_seconds": 0.281,
+  "chunks_per_second": 188.61
+}
