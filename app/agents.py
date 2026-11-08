@@ -1,0 +1,160 @@
+import json
+import re
+import hashlib
+import os
+from pathlib import Path
+from redis import Redis
+
+ROOT = Path(__file__).resolve().parent.parent
+CORPUS_DATA = json.loads((ROOT / "corpus" / "dgca_car.json").read_text(encoding="utf8"))
+CORPUS = CORPUS_DATA["chunks"]
+for _passage in CORPUS:
+    _passage.setdefault("source_url", CORPUS_DATA.get("source_url", "https://www.dgca.gov.in/"))
+    _passage.setdefault("source", CORPUS_DATA.get("source", "DGCA CAR Section 3, Series M, Part IV"))
+_cache_redis = Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True,
+                              socket_connect_timeout=0.15, socket_timeout=0.2)
+_corpus_version = hashlib.sha256(json.dumps(CORPUS, sort_keys=True).encode()).hexdigest()[:12]
+
+
+def classify_extract(claim):
+    text = (claim.get("free_text") or "").lower()
+    return {"agent": "intake", "disruption": claim.get("disruption"),
+            "reported_at_airport": claim.get("passenger_reported_at_airport"),
+            "notice_minutes": claim.get("notice_minutes"),
+            "alternate_provided": claim.get("alternate_flight_provided"),
+            "alternate_accepted": claim.get("alternate_accepted"),
+            "block_time_minutes": claim.get("block_time_minutes"),
+            "mentions_cancellation": "cancel" in text,
+            "fields_missing": [k for k in ("notice_minutes", "passenger_reported_at_airport", "contact_details_provided") if claim.get(k) is None]}
+
+
+def search_corpus(query, strategy="lexical", limit=8):
+    cache_key = "retrieval:" + hashlib.sha256(f"{_corpus_version}:{strategy}:{limit}:{query.lower().strip()}".encode()).hexdigest()
+    if os.getenv("CACHE_RETRIEVALS", "true").lower() == "true":
+        try:
+            cached = _cache_redis.get(cache_key)
+            if cached:
+                _cache_redis.incr("retrieval:cache_hits")
+                return json.loads(cached)
+            _cache_redis.incr("retrieval:cache_misses")
+        except Exception:
+            pass
+    terms = set(re.findall(r"[a-z0-9]+", query.lower()))
+    lexical = []
+    for p in CORPUS:
+        hay = (p["text"] + " " + p["clause"] + " " + " ".join(p["tags"])).lower()
+        score = sum(1 for term in terms if term in hay)
+        if score:
+            lexical.append((score, p))
+    lexical.sort(key=lambda x: (-x[0], x[1]["id"]))
+    try:
+        from .retrieval import search as vector_search
+        matches = vector_search(query, k=limit)
+        matches = [p for p in matches if p.get("score", 0) > 0]
+        if matches:
+            vector_scores = {p["id"]: p["score"] for p in matches}
+            lexical_scores = {p["id"]: score / max(len(terms), 1) for score, p in lexical}
+            candidates = {p["id"]: p for p in [x[1] for x in lexical] + matches}
+            ranked = sorted(candidates.values(), key=lambda p: -(0.7*lexical_scores.get(p["id"], 0) + 0.3*vector_scores.get(p["id"], 0)))
+            output = ranked[:limit]
+            if os.getenv("CACHE_RETRIEVALS", "true").lower() == "true":
+                try: _cache_redis.setex(cache_key, 3600, json.dumps(output))
+                except Exception: pass
+            return output
+    except Exception:
+        # A missing or rebuilding index degrades to the deterministic lexical path.
+        pass
+    output = [p for _, p in lexical[:limit]]
+    if os.getenv("CACHE_RETRIEVALS", "true").lower() == "true":
+        try: _cache_redis.setex(cache_key, 3600, json.dumps(output))
+        except Exception: pass
+    return output
+
+
+def lookup_clause(clause_id):
+    return next((p for p in CORPUS if p["id"] == clause_id or p["clause"] == clause_id), None)
+
+
+def lookup_claim_field(claim, field):
+    return {"field": field, "value": claim.get(field)}
+
+
+def make_result(position, explanation, route, basis, citations):
+    return {"position": position, "recommendation": explanation, "route": route, "basis": basis,
+            "citations": citations,
+            "authority_note": "This is a triage recommendation only. It does not authorise or issue payment; a customer relations officer decides."}
+
+
+def adjudicate(claim, facts, retrieved):
+    byid = {p["id"]: p for p in retrieved}
+    citations = []
+
+    def cite(cid):
+        if cid in byid:
+            p = byid[cid]
+            citations.append({"source_id": cid, "clause": p["clause"], "quote": p["text"],
+                              "source": p.get("source"), "source_url": p.get("source_url"), "page": p.get("page")})
+
+    if claim.get("cause_disputed"):
+        cite("CAR-1.4-1.5")
+        if claim.get("disruption") == "cancellation":
+            cite("CAR-3.3.4")
+        return make_result("human_escalation", "Cause attribution is disputed and requires officer review.", "human_review", "Cause dispute", citations)
+    if claim.get("cause") and re.search(r"(?i)(air traffic control|weather|meteorolog|security|natural disaster|political instability|force majeure)", claim["cause"]):
+        if "CAR-1.4-1.5" in byid:
+            cite("CAR-1.4-1.5")
+            return make_result("human_escalation", "The reported cause may fall within the extraordinary-circumstances exception. Evidence and causation require officer review.", "human_review", "Cause attribution needs evidence", citations)
+    kind = claim.get("disruption")
+    if kind == "cancellation":
+        for cid in ("CAR-3.3.2", "CAR-3.3.3", "CAR-3.3.4", "CAR-3.8.1"):
+            cite(cid)
+        alt = claim.get("alternate_flight_provided") is True and claim.get("alternate_accepted") is True
+        if alt:
+            if claim.get("passenger_reported_at_airport") is True:
+                facility_text = "The claim reports that the passenger was at the airport waiting for the alternate, so meals and refreshments in relation to waiting time must be checked under CAR 3.3.2 and 3.8.1(a). Confirm whether they were provided."
+            elif claim.get("passenger_reported_at_airport") is False:
+                facility_text = "The claim says the passenger did not report at the airport; the airport waiting-facilities condition in CAR 3.3.2 is not established on these facts. Confirm the report-time record if disputed."
+            else:
+                facility_text = "The airport-reporting fact is missing. Confirm whether the passenger reported and waited at the airport; if so, check meals and refreshments under CAR 3.3.2 and 3.8.1(a)."
+            return make_result("request_further_evidence",
+                "The passenger accepted the alternate flight. CAR 3.3.2 provides an acceptable alternate flight or compensation plus full ticket refund; on the reported facts, cancellation compensation is not recommended. " + facility_text,
+                "request_further_evidence", "Accepted alternate flight; verify facilities and the reported facts", citations)
+        if claim.get("alternate_flight_provided") is None or claim.get("notice_minutes") is None or claim.get("contact_details_provided") is None:
+            return make_result("request_further_evidence", "The claim is incomplete. Notice, booking contact details, and alternate-flight facts affect the applicable cancellation conditions; obtain them before reaching an entitlement position.", "request_further_evidence", "Missing entitlement facts", citations)
+        if claim.get("notice_minutes", 0) < 1440:
+            if claim.get("contact_details_provided") is False:
+                return make_result("request_further_evidence", "CAR 3.3.3 removes financial compensation when adequate booking contact information was not provided. Confirm whether an alternate or refund was offered and whether waiting-time facilities were provided.", "request_further_evidence", "Contact-information exception; verify remedy and facilities", citations)
+            if claim.get("alternate_flight_provided") is False and claim.get("cause") and claim.get("booked_one_way_basic_fare_inr") is not None and not claim.get("cause_disputed"):
+                if re.search(r"(?i)(air traffic control|weather|meteorolog|security|natural disaster|political instability|force majeure|strike|flood|government order)", claim.get("cause", "")):
+                    return make_result("human_escalation", "The recorded cause may be an extraordinary circumstance under CAR 1.4/1.5. An officer must verify the cause and reasonable measures before any entitlement recommendation.", "human_review", "Potential extraordinary-circumstances exception", citations)
+                cap = 5000 if claim["block_time_minutes"] <= 60 else 7500 if claim["block_time_minutes"] <= 120 else 10000
+                amount = min(cap, claim["booked_one_way_basic_fare_inr"] + claim["airline_fuel_charge_inr"])
+                if "CAR-3.3.2" in byid:
+                    result = make_result("pay-as-computed", f"Recommend INR {amount:.2f} compensation and the applicable full ticket refund under CAR 3.3.2, subject to officer verification of the booking fare, notice, contact details, and cause. This is not payment authorization.", "pay-as-computed", "Less of block-time cap and booked one-way basic fare plus airline fuel charge", citations)
+                    result["calculation"] = {"currency": "INR", "block_time_cap": cap, "basic_fare": claim["booked_one_way_basic_fare_inr"], "fuel_charge": claim["airline_fuel_charge_inr"], "recommended_compensation": amount}
+                    return result
+            if claim.get("alternate_flight_provided") is False and claim.get("booked_one_way_basic_fare_inr") is None:
+                return make_result("request_further_evidence", "The claim appears to meet the late-notice conditions, but the booked one-way basic fare and fuel charge are needed to compute the CAR 3.3.2 amount. Verify the cause and contact details as well.", "request_further_evidence", "Fare inputs missing for calculation", citations)
+            return make_result("human_escalation", "Notice was under 24 hours. The claim must be assessed against the complete notice and contact-information conditions in CAR 3.3.1–3.3.4.", "human_review", "Conditional cancellation provisions require review", citations)
+        return make_result("human_escalation", "The effect of notice and contact details requires review against the complete cancellation conditions.", "human_review", "Conditional cancellation provisions require review", citations)
+    clause = {"delay": "CAR-3.4.1", "denied_boarding": "CAR-3.2.2", "downgrading": "CAR-3.5.1"}.get(kind)
+    if clause:
+        cite(clause)
+        return make_result("human_escalation", "The relevant clause was retrieved, but this release does not encode all conditional tests for this disruption category. An officer should review the claim.", "human_review", "Rule coverage incomplete", citations)
+    return make_result("human_escalation", "Disruption category is outside the supported corpus.", "human_review", "Unsupported category", citations)
+
+
+def verify(result, retrieved):
+    retrieved_ids = {p["id"] for p in retrieved}
+    for c in result.get("citations", []):
+        if c.get("source_id") not in retrieved_ids:
+            return False, "citation_not_retrieved"
+        passage = next(p for p in retrieved if p["id"] == c["source_id"])
+        if c.get("quote") != passage["text"] or c.get("clause") != passage["clause"]:
+            return False, "citation_text_mismatch"
+    allowed = {"pay-as-computed", "request_further_evidence", "decline_with_cited_provision", "human_escalation"}
+    if result.get("position") not in allowed:
+        return False, "invalid_position"
+    if result["position"] in {"decline_with_cited_provision", "pay-as-computed"} and not result.get("citations"):
+        return False, "unsupported_determination"
+    return True, "verified"
