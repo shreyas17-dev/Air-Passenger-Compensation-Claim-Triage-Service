@@ -139,24 +139,43 @@ def adjudicate(claim, facts, retrieved):
             return make_result("human_escalation", "The reported cause may fall within the extraordinary-circumstances exception. Evidence and causation require officer review.", "human_review", "Cause attribution needs evidence", citations)
     kind = claim.get("disruption")
     if kind == "cancellation":
-        for cid in ("CAR-3.3.2", "CAR-3.3.3", "CAR-3.3.4", "CAR-3.8.1"):
+        for cid in ("CAR-3.3.1", "CAR-3.3.2", "CAR-3.3.3", "CAR-3.3.4", "CAR-3.8.1"):
             cite(cid)
+
+        def decline(deciding_clause, explanation, basis):
+            # A decline must rest on a provision that was actually retrieved; otherwise escalate.
+            if deciding_clause not in byid:
+                return make_result("human_escalation", f"The provision needed to decline ({deciding_clause}) was not retrieved, so the decline cannot be grounded. Officer review required.", "human_review", "Deciding provision not retrieved", citations)
+            return make_result("decline_with_cited_provision", explanation, "decline_with_cited_provision", basis, citations)
+
+        if claim.get("passenger_reported_at_airport") is True:
+            facility_text = "The passenger had reported at the airport, so meals and refreshments in relation to the waiting time are still owed under CAR 3.3.2 and 3.8.1(a); confirm they were provided."
+        elif claim.get("passenger_reported_at_airport") is False:
+            facility_text = "The passenger did not report at the airport, so the airport waiting-facilities condition in CAR 3.3.2 is not established on these facts."
+        else:
+            facility_text = "If the passenger reported and waited at the airport, meals and refreshments in relation to the waiting time are owed under CAR 3.3.2 and 3.8.1(a); confirm the report time."
         alt = claim.get("alternate_flight_provided") is True and claim.get("alternate_accepted") is True
         if alt:
-            if claim.get("passenger_reported_at_airport") is True:
-                facility_text = "The claim reports that the passenger was at the airport waiting for the alternate, so meals and refreshments in relation to waiting time must be checked under CAR 3.3.2 and 3.8.1(a). Confirm whether they were provided."
-            elif claim.get("passenger_reported_at_airport") is False:
-                facility_text = "The claim says the passenger did not report at the airport; the airport waiting-facilities condition in CAR 3.3.2 is not established on these facts. Confirm the report-time record if disputed."
-            else:
-                facility_text = "The airport-reporting fact is missing. Confirm whether the passenger reported and waited at the airport; if so, check meals and refreshments under CAR 3.3.2 and 3.8.1(a)."
-            return make_result("request_further_evidence",
-                "The passenger accepted the alternate flight. CAR 3.3.2 provides an acceptable alternate flight or compensation plus full ticket refund; on the reported facts, cancellation compensation is not recommended. " + facility_text,
-                "request_further_evidence", "Accepted alternate flight; verify facilities and the reported facts", citations)
+            return decline("CAR-3.3.2",
+                "Decline cancellation compensation. CAR 3.3.2 requires the airline to provide either an acceptable alternate flight or compensation with a full refund; the passenger accepted and took the alternate flight, so no compensation is payable. " + facility_text,
+                "CAR 3.3.2: accepted alternate flight replaces compensation")
+        if claim.get("contact_details_provided") is False:
+            return decline("CAR-3.3.3",
+                "Decline financial compensation. CAR 3.3.3 states no financial compensation is payable where the passenger did not provide adequate contact information at booking. The airline must still refund the ticket or arrange alternate travel as the passenger chooses, and provide waiting facilities under 3.8.1(a) if the passenger travels on an alternate flight.",
+                "CAR 3.3.3: no contact information at booking")
         if claim.get("alternate_flight_provided") is None or claim.get("notice_minutes") is None or claim.get("contact_details_provided") is None:
             return make_result("request_further_evidence", "The claim is incomplete. Notice, booking contact details, and alternate-flight facts affect the applicable cancellation conditions; obtain them before reaching an entitlement position.", "request_further_evidence", "Missing entitlement facts", citations)
+        if claim["notice_minutes"] >= 14 * 1440:
+            return decline("CAR-3.3.1",
+                "Decline cancellation compensation. The passenger was informed at least two weeks before departure, which meets CAR 3.3.1; compensation under 3.3.2 applies only to passengers not informed as 3.3.1 provides. The passenger is owed an alternate flight or refund as acceptable to them.",
+                "CAR 3.3.1: informed at least two weeks before departure")
+        if claim["notice_minutes"] >= 1440:
+            if claim.get("alternate_flight_provided") is True:
+                return decline("CAR-3.3.1",
+                    "Decline cancellation compensation. The passenger was informed between two weeks and 24 hours before departure and offered an alternate flight, which meets CAR 3.3.1; compensation under 3.3.2 does not apply. A refund remains available if the alternate was not acceptable.",
+                    "CAR 3.3.1: 24 hours to two weeks notice with alternate offered")
+            return make_result("human_escalation", "Notice was between 24 hours and two weeks, but no alternate flight was recorded. Whether the airline offered the refund CAR 3.3.1 requires decides whether 3.3.2 applies; an officer must check.", "human_review", "CAR 3.3.1 compliance unclear", citations)
         if claim.get("notice_minutes", 0) < 1440:
-            if claim.get("contact_details_provided") is False:
-                return make_result("request_further_evidence", "CAR 3.3.3 removes financial compensation when adequate booking contact information was not provided. Confirm whether an alternate or refund was offered and whether waiting-time facilities were provided.", "request_further_evidence", "Contact-information exception; verify remedy and facilities", citations)
             if claim.get("alternate_flight_provided") is False and claim.get("cause") and claim.get("booked_one_way_basic_fare_inr") is not None and not claim.get("cause_disputed"):
                 if re.search(r"(?i)(air traffic control|weather|meteorolog|security|natural disaster|political instability|force majeure|strike|flood|government order)", claim.get("cause", "")):
                     return make_result("human_escalation", "The recorded cause may be an extraordinary circumstance under CAR 1.4/1.5. An officer must verify the cause and reasonable measures before any entitlement recommendation.", "human_review", "Potential extraordinary-circumstances exception", citations)
