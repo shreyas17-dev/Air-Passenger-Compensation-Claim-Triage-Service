@@ -8,7 +8,7 @@
 
 ## Model provider unavailable / circuit open
 
-- **Symptom:** runs finish at `human_escalation` with reviewer failure; `provider:open` is false in Redis.
+- **Symptom:** runs finish at `human_escalation` with reviewer failure; `provider:circuit` is `open` in Redis (`docker compose exec redis redis-cli get provider:circuit`); the run's `basis` names the cause.
 - **Confirm:** inspect `/v1/runs/{run_id}/trace` for model retries and reviewer fallback; inspect model-stub/provider logs and `agent_failures_total`.
 - **Recover:** for the stub, restore `STUB_FAIL=false`; for an OpenAI-compatible provider, verify runtime-injected base URL, key, and model name. Wait for the configured breaker cooldown, then submit one canary claim and inspect citations before resuming.
 
