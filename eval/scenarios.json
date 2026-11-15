@@ -12,10 +12,10 @@
       "contact_details_provided": true,
       "cause": "operational",
       "cause_disputed": false,
-      "free_text": "Passenger reports cancellation and requests compensation.",
+      "free_text": "My flight was cancelled. I was already at the airport and was told 90 minutes before departure. The airline put me on a flight four hours later, which I took. I want the compensation for cancellation.",
       "disruption": "cancellation"
     },
-    "expected_position": "request_further_evidence",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
       "CAR-3.3.2",
       "CAR-3.8.1"
@@ -164,7 +164,7 @@
       "free_text": "Passenger reports cancellation and requests compensation.",
       "disruption": "cancellation"
     },
-    "expected_position": "request_further_evidence",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
       "CAR-3.3.2",
       "CAR-3.8.1"
@@ -175,20 +175,23 @@
     "claim": {
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
-      "block_time_minutes": 120,
-      "notice_minutes": 90,
+      "block_time_minutes": 90,
+      "notice_minutes": 60,
       "alternate_flight_provided": false,
       "alternate_accepted": false,
       "passenger_reported_at_airport": true,
       "contact_details_provided": true,
-      "cause": "operational",
+      "cause": "technical fault",
       "cause_disputed": false,
-      "free_text": "Passenger reports delay and requests compensation.",
-      "disruption": "delay"
+      "free_text": "My flight was cancelled one hour before departure and no alternate was offered.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": 4000.0,
+      "airline_fuel_charge_inr": 800.0
     },
-    "expected_position": "human_escalation",
+    "expected_position": "pay-as-computed",
     "supporting_passages": [
-      "CAR-3.4.1"
+      "CAR-3.3.2"
     ]
   },
   {
@@ -217,20 +220,23 @@
     "claim": {
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
-      "block_time_minutes": 120,
-      "notice_minutes": 90,
+      "block_time_minutes": 200,
+      "notice_minutes": 300,
       "alternate_flight_provided": false,
       "alternate_accepted": false,
       "passenger_reported_at_airport": true,
       "contact_details_provided": true,
-      "cause": "operational",
+      "cause": "crew shortage",
       "cause_disputed": false,
-      "free_text": "Passenger reports downgrading and requests compensation.",
-      "disruption": "downgrading"
+      "free_text": "My flight was cancelled five hours before departure; no alternate was offered.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": 12000.0,
+      "airline_fuel_charge_inr": 1500.0
     },
-    "expected_position": "human_escalation",
+    "expected_position": "pay-as-computed",
     "supporting_passages": [
-      "CAR-3.5.1"
+      "CAR-3.3.2"
     ]
   },
   {
@@ -249,7 +255,7 @@
       "free_text": "Passenger reports cancellation and requests compensation.",
       "disruption": "cancellation"
     },
-    "expected_position": "request_further_evidence",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
       "CAR-3.3.2",
       "CAR-3.8.1"
@@ -261,19 +267,22 @@
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
       "block_time_minutes": 120,
-      "notice_minutes": 90,
+      "notice_minutes": 30000,
       "alternate_flight_provided": false,
       "alternate_accepted": false,
-      "passenger_reported_at_airport": true,
+      "passenger_reported_at_airport": false,
       "contact_details_provided": true,
       "cause": "operational",
       "cause_disputed": false,
-      "free_text": "Passenger reports delay and requests compensation.",
-      "disruption": "delay"
+      "free_text": "My flight was cancelled; the airline emailed me three weeks before.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": null,
+      "airline_fuel_charge_inr": null
     },
-    "expected_position": "human_escalation",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
-      "CAR-3.4.1"
+      "CAR-3.3.1"
     ]
   },
   {
@@ -282,19 +291,22 @@
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
       "block_time_minutes": 120,
-      "notice_minutes": 90,
-      "alternate_flight_provided": false,
+      "notice_minutes": 4320,
+      "alternate_flight_provided": true,
       "alternate_accepted": false,
-      "passenger_reported_at_airport": true,
+      "passenger_reported_at_airport": false,
       "contact_details_provided": true,
       "cause": "operational",
       "cause_disputed": false,
-      "free_text": "Passenger reports denied boarding and requests compensation.",
-      "disruption": "denied_boarding"
+      "free_text": "My flight was cancelled three days before; they offered another flight but I want compensation.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": null,
+      "airline_fuel_charge_inr": null
     },
-    "expected_position": "human_escalation",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
-      "CAR-3.2.2"
+      "CAR-3.3.1"
     ]
   },
   {
@@ -334,7 +346,7 @@
       "free_text": "Passenger reports cancellation and requests compensation.",
       "disruption": "cancellation"
     },
-    "expected_position": "request_further_evidence",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
       "CAR-3.3.2",
       "CAR-3.8.1"
@@ -346,19 +358,22 @@
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
       "block_time_minutes": 120,
-      "notice_minutes": 90,
+      "notice_minutes": 60,
       "alternate_flight_provided": false,
       "alternate_accepted": false,
       "passenger_reported_at_airport": true,
-      "contact_details_provided": true,
+      "contact_details_provided": false,
       "cause": "operational",
       "cause_disputed": false,
-      "free_text": "Passenger reports delay and requests compensation.",
-      "disruption": "delay"
+      "free_text": "My flight was cancelled and nobody told me. I booked without giving a phone number.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": null,
+      "airline_fuel_charge_inr": null
     },
-    "expected_position": "human_escalation",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
-      "CAR-3.4.1"
+      "CAR-3.3.3"
     ]
   },
   {
@@ -367,19 +382,22 @@
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
       "block_time_minutes": 120,
-      "notice_minutes": 90,
+      "notice_minutes": 60,
       "alternate_flight_provided": false,
       "alternate_accepted": false,
       "passenger_reported_at_airport": true,
       "contact_details_provided": true,
-      "cause": "operational",
+      "cause": "technical fault",
       "cause_disputed": false,
-      "free_text": "Passenger reports denied boarding and requests compensation.",
-      "disruption": "denied_boarding"
+      "free_text": "My flight was cancelled one hour before departure and no alternate was offered.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": null,
+      "airline_fuel_charge_inr": null
     },
-    "expected_position": "human_escalation",
+    "expected_position": "request_further_evidence",
     "supporting_passages": [
-      "CAR-3.2.2"
+      "CAR-3.3.2"
     ]
   },
   {
@@ -388,19 +406,22 @@
       "flight_number": "AI101",
       "scheduled_departure": "2026-11-01T12:00:00+05:30",
       "block_time_minutes": 120,
-      "notice_minutes": 90,
+      "notice_minutes": 4320,
       "alternate_flight_provided": false,
       "alternate_accepted": false,
-      "passenger_reported_at_airport": true,
+      "passenger_reported_at_airport": false,
       "contact_details_provided": true,
       "cause": "operational",
       "cause_disputed": false,
-      "free_text": "Passenger reports downgrading and requests compensation.",
-      "disruption": "downgrading"
+      "free_text": "My flight was cancelled three days before departure.",
+      "disruption": "cancellation",
+      "alternate_delay_minutes": null,
+      "booked_one_way_basic_fare_inr": null,
+      "airline_fuel_charge_inr": null
     },
     "expected_position": "human_escalation",
     "supporting_passages": [
-      "CAR-3.5.1"
+      "CAR-3.3.1"
     ]
   },
   {
@@ -419,7 +440,7 @@
       "free_text": "Passenger reports cancellation and requests compensation.",
       "disruption": "cancellation"
     },
-    "expected_position": "request_further_evidence",
+    "expected_position": "decline_with_cited_provision",
     "supporting_passages": [
       "CAR-3.3.2",
       "CAR-3.8.1"
@@ -436,7 +457,9 @@
       "notice_minutes": 90,
       "alternate_flight_provided": false,
       "contact_details_provided": true,
-      "cause": "operational"
+      "cause": "operational",
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30"
     }
   },
   {
@@ -450,7 +473,9 @@
       "notice_minutes": 90,
       "alternate_flight_provided": false,
       "contact_details_provided": true,
-      "cause": "operational"
+      "cause": "operational",
+      "flight_number": "AI101",
+      "scheduled_departure": "2026-11-01T12:00:00+05:30"
     }
   }
 ]
