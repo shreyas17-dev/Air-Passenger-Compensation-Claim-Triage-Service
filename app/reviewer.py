@@ -29,6 +29,46 @@ RELEVANT_CLAUSES = {
 }
 
 
+AUTHORISATION_OR_INJECTION = re.compile(r"(?i)(payment (is|has been) (authori[sz]ed|approved)|guaranteed compensation|pay immediately|ignore (all|previous) instructions|system prompt)")
+TOXIC = re.compile(r"(?i)\b(fuck|shit|bitch|asshole|bastard)\b")
+CLAUSE_REF = re.compile(r"(?<![\d.,])(\d\.\d{1,2}(?:\.\d{1,2})?)(?!\.?\d)(?!,\d)")
+AMOUNT = re.compile(r"(?i)(?:INR|Rs\.?|\u20b9)\s*([\d,]+(?:\.\d+)?)")
+
+
+def check_advisory(result, advisory, retrieved):
+    """Accept model wording, but never a different decision, citation, clause or amount.
+
+    The rule engine owns the route; the model may only explain it. Exact text
+    equality is not required, so a real LLM can be used, but every determination
+    the text could carry is checked against the verified rule result."""
+    if not isinstance(advisory, dict):
+        return False, "malformed_output"
+    if advisory.get("position") != result.get("position") or advisory.get("route") != result.get("route"):
+        return False, "route_mismatch"
+    expected_citations = {c["source_id"] for c in result.get("citations", [])}
+    if set(advisory.get("citation_ids") or []) != expected_citations or expected_citations - {p["id"] for p in retrieved}:
+        return False, "citation_not_retrieved"
+    text = advisory.get("recommendation")
+    if not isinstance(text, str) or not text.strip() or len(text) > 4000:
+        return False, "missing_recommendation"
+    if AUTHORISATION_OR_INJECTION.search(text):
+        return False, "unauthorised_determination_or_injection"
+    if TOXIC.search(text):
+        return False, "toxic_output"
+    allowed_clauses = set()
+    for c in result.get("citations", []):
+        allowed_clauses.update(str(c.get("clause", "")).split("-"))
+    unsupported = {ref for ref in CLAUSE_REF.findall(text) if ref not in allowed_clauses}
+    if unsupported:
+        return False, "uncited_clause_reference:" + ",".join(sorted(unsupported))
+    computed = (result.get("calculation") or {}).get("recommended_compensation")
+    for raw in AMOUNT.findall(text):
+        amount = float(raw.replace(",", ""))
+        if computed is None or abs(amount - float(computed)) > 0.01:
+            return False, "unsupported_amount"
+    return True, "verified"
+
+
 def record_live_quality(rid, claim, retrieved, result):
     if int(r.incr("quality:sample_counter")) % 10:
         return
@@ -43,7 +83,8 @@ def record_live_quality(rid, claim, retrieved, result):
                "faithfulness": float(valid), "hallucination_rate": float(not valid)}
     r.lpush("quality:samples", json.dumps(quality))
     r.ltrim("quality:samples", 0, 999)
-    record_event(rid, "quality_sample", **quality)
+    # run_id is passed positionally; passing it again via **quality raised TypeError.
+    record_event(rid, "quality_sample", **{k: v for k, v in quality.items() if k != "run_id"})
 
 
 @traced("entitlement_reviewer")
@@ -79,21 +120,10 @@ def process(item):
         r.hincrby("tokens:by-step", f"prompt:{model_call['step']}", model_call["prompt_tokens"])
         r.hincrby("tokens:by-step", f"completion:{model_call['step']}", model_call["completion_tokens"])
         advisory = model_call["output"]
-        if advisory.get("position") != result.get("position") or advisory.get("route") != result.get("route"):
-            record_event(rid, "provider_output_verification", agent="entitlement_reviewer", verified=False, reason="route_mismatch", fallback="human_escalation")
-            raise ValueError("provider output requested an unsupported determination")
-        advisory_text = advisory.get("recommendation", "")
-        if advisory_text != result.get("recommendation"):
-            record_event(rid, "provider_output_verification", agent="entitlement_reviewer", verified=False, reason="unsupported_recommendation", fallback="human_escalation")
-            raise ValueError("provider output did not match the verified rule-grounded recommendation")
-        if re.search(r"(?i)(payment is authorized|guaranteed compensation|pay immediately|ignore (all|previous) instructions|system prompt)", advisory_text):
-            raise ValueError("provider output failed authorization or injection filter")
-        if re.search(r"(?i)\b(fuck|shit|bitch|asshole|bastard)\b", advisory_text):
-            raise ValueError("provider output failed toxicity filter")
-        expected_citations = {c["source_id"] for c in result.get("citations", [])}
-        if set(advisory.get("citation_ids", [])) != expected_citations or expected_citations - {p["id"] for p in retrieved}:
-            record_event(rid, "provider_output_verification", agent="entitlement_reviewer", verified=False, reason="citation_not_retrieved", fallback="human_escalation")
-            raise ValueError("provider output contains unsupported citations")
+        ok_output, reason = check_advisory(result, advisory, retrieved)
+        if not ok_output:
+            record_event(rid, "provider_output_verification", agent="entitlement_reviewer", verified=False, reason=reason, fallback="human_escalation")
+            raise ValueError(f"provider output rejected: {reason}")
         result["recommendation"] = advisory.get("recommendation", result["recommendation"])
         result["token_usage"] = {"prompt_tokens": model_call["prompt_tokens"],
                                  "completion_tokens": model_call["completion_tokens"], "cost": model_call["cost"],
@@ -149,17 +179,18 @@ def process(item):
                          latency_ms=round((time.monotonic()-provider_started)*1000, 2), error=type(e).__name__)
         # Reviewer failure is an escalation, never a confident partial result.
         failed_usage = {"prompt_tokens": model_call["prompt_tokens"], "completion_tokens": model_call["completion_tokens"], "cost": model_call["cost"]} if "model_call" in locals() else {"prompt_tokens": 0, "completion_tokens": 0, "cost": 0}
-        fallback = {"position": "human_escalation", "route": "human_review", "basis": "reviewer unavailable",
+        # State why automation stopped (circuit open, provider outage, unverified output).
+        fallback = {"position": "human_escalation", "route": "human_review", "basis": f"automated review fallback: {e}",
                     "recommendation": "Automated review did not complete; customer relations officer review required.",
                     "citations": [], "authority_note": "No payment is authorised.",
-                    "run_id": rid, "correlation_id": rid, "prompt_version": os.getenv("PROMPT_VERSION", PROMPT_VERSION),
+                    "run_id": rid, "correlation_id": rid, "prompt_version": os.getenv("PROMPT_VERSION", "triage-v2"),
                     "token_usage": failed_usage,
                     "retrieved_passages": item.get("passages", []), "latency_ms": round((time.monotonic()-started)*1000, 2)}
         r.hset(f"run:{rid}", mapping={"status": "completed", "updated_at": time.time(), "result": json.dumps(fallback)})
         r.incr("agent:failures:entitlement_reviewer")
         r.hincrby("agent:metrics:entitlement_reviewer", "steps", review_tool_calls)
         r.hincrby("agent:metrics:entitlement_reviewer", "tool_calls", review_tool_calls)
-        r.hincrbyfloat("agent:metrics:entitlement_reviewer", "latency_ms_total", round(time.monotonic()-review_started, 2))
+        r.hincrbyfloat("agent:metrics:entitlement_reviewer", "latency_ms_total", round((time.monotonic()-review_started)*1000, 2))
         r.hincrby("agent:metrics:entitlement_reviewer", "runs", 1)
         AGENT_RUNS.labels(AGENT, "fallback").inc()
         AGENT_TASK_LATENCY.labels(AGENT).observe(time.monotonic()-review_started)
@@ -197,6 +228,9 @@ def main():
         for msg_id, fields in messages:
             try:
                 process(json.loads(fields["payload"]))
+            except Exception:
+                # Never let one bad message kill the worker process.
+                logging.exception(json.dumps({"event": "review_message_unhandled", "message_id": msg_id}))
             finally:
                 r.xack("review_queue", "review", msg_id)
 
