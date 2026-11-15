@@ -8,9 +8,9 @@ Run the same duration and user count at one worker per agent and then three work
 
 ```sh
 docker compose up --build -d --scale intake-agent=1 --scale review-agent=1
-docker compose --profile benchmark run --rm locust --headless -u 20 -r 5 --run-time 2m --csv eval/scale-1
+docker compose --profile benchmark run --rm locust -f /srv/locustfile.py --host http://api:8000 --headless -u 20 -r 5 --run-time 2m --csv eval/scale-1
 docker compose up -d --scale intake-agent=3 --scale review-agent=3
-docker compose --profile benchmark run --rm locust --headless -u 20 -r 5 --run-time 2m --csv eval/scale-3
+docker compose --profile benchmark run --rm locust -f /srv/locustfile.py --host http://api:8000 --headless -u 20 -r 5 --run-time 2m --csv eval/scale-3
 ```
 
 ## Compare retrieval cache

@@ -93,7 +93,7 @@ The predeclared stub SLO is p95 <= 5 seconds from submission through completed r
 docker compose --profile benchmark run --rm locust --headless -u 20 -r 5 --run-time 2m --csv eval/locust
 ```
 
-Do not treat submission latency alone as the run SLO. Measured results, the concurrency at which the target fails, the bottleneck (the review agent's model call), and the cache effect are in [docs/benchmark-results.md](docs/benchmark-results.md); the method is in [docs/benchmark-protocol.md](docs/benchmark-protocol.md). Those numbers were taken with the services run as native processes; re-run the protocol under Docker Compose on the demo machine and update them.
+Do not treat submission latency alone as the run SLO. Measured results, the concurrency at which the target fails, the bottleneck (the review agent's model call), and the cache effect are in [docs/benchmark-results.md](docs/benchmark-results.md); the method is in [docs/benchmark-protocol.md](docs/benchmark-protocol.md). The scale and break-point numbers were measured under Docker Compose; the cache comparison was measured with native processes. When you pass your own Locust arguments to `docker compose run locust`, they replace the service's default command, so always include `-f /srv/locustfile.py --host http://api:8000`.
 
 To compare worker scale, run the same benchmark first at one intake and review worker, then at three each. To compare cache settings, set `CACHE_RETRIEVALS=true` and `false` in separate fresh Compose project runs, use the same user count and duration, and save each Locust CSV plus `/v1/costs` and cache counters from `/metrics`. Compare end-to-end run p50/p95, RPS, cache hit ratio, and cost per 100 runs. The SLO target was declared before measurement.
 
