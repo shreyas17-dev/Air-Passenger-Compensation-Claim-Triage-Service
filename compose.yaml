@@ -1,5 +1,6 @@
 ﻿services:
   api:
+    image: air-claim-triage:local
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports: ["8000:8000"]
@@ -18,7 +19,7 @@
       timeout: 3s
       retries: 5
   intake-agent:
-    build: .
+    image: air-claim-triage:local
     command: python -m app.worker
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
@@ -49,7 +50,7 @@
       timeout: 3s
       retries: 5
   review-agent:
-    build: .
+    image: air-claim-triage:local
     command: python -m app.reviewer
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
@@ -86,7 +87,7 @@
       timeout: 3s
       retries: 10
   dashboard:
-    build: .
+    image: air-claim-triage:local
     command: uvicorn app.dashboard:app --host 0.0.0.0 --port 8080
     environment:
       SERVICE_ROLE: dashboard
@@ -101,7 +102,7 @@
       timeout: 3s
       retries: 5
   model-stub:
-    build: .
+    image: air-claim-triage:local
     command: uvicorn app.stub_provider:app --host 0.0.0.0 --port 8090
     environment:
       STUB_MODEL_DELAY_SECONDS: ${STUB_MODEL_DELAY_SECONDS:-0.15}
@@ -158,7 +159,7 @@
       timeout: 5s
       retries: 10
   locust:
-    build: .
+    image: air-claim-triage:local
     profiles: ["benchmark"]
     entrypoint: ["locust"]
     command: ["-f", "/srv/locustfile.py", "--host", "http://api:8000"]
