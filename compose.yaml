@@ -3,6 +3,7 @@
     image: air-claim-triage:local
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
     ports: ["8000:8000"]
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
@@ -22,6 +23,7 @@
     image: air-claim-triage:local
     pull_policy: never  # built locally by the api service; never pull from a registry
     command: python -m app.worker
+    restart: unless-stopped
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       WORKER_MODE: "true"
@@ -37,6 +39,7 @@
       MODEL_NAME: ${MODEL_NAME:-}
       MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-8}
       MODEL_MAX_TOTAL_SECONDS: ${MODEL_MAX_TOTAL_SECONDS:-12}
+      MODEL_CIRCUIT_COOLDOWN_SECONDS: ${MODEL_CIRCUIT_COOLDOWN_SECONDS:-30}
       PROMPT_VERSION: ${PROMPT_VERSION:-triage-v2}
       MODEL_INPUT_COST_PER_1K: ${MODEL_INPUT_COST_PER_1K:-0}
       MODEL_OUTPUT_COST_PER_1K: ${MODEL_OUTPUT_COST_PER_1K:-0}
@@ -54,6 +57,7 @@
     image: air-claim-triage:local
     pull_policy: never  # built locally by the api service; never pull from a registry
     command: python -m app.reviewer
+    restart: unless-stopped
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SERVICE_ROLE: review-agent
@@ -66,6 +70,7 @@
       MODEL_NAME: ${MODEL_NAME:-}
       MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-8}
       MODEL_MAX_TOTAL_SECONDS: ${MODEL_MAX_TOTAL_SECONDS:-12}
+      MODEL_CIRCUIT_COOLDOWN_SECONDS: ${MODEL_CIRCUIT_COOLDOWN_SECONDS:-30}
       PROMPT_VERSION: ${PROMPT_VERSION:-triage-v2}
       MODEL_INPUT_COST_PER_1K: ${MODEL_INPUT_COST_PER_1K:-0}
       MODEL_OUTPUT_COST_PER_1K: ${MODEL_OUTPUT_COST_PER_1K:-0}
@@ -82,6 +87,7 @@
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
     volumes: ["redis_data:/data"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -92,6 +98,7 @@
     image: air-claim-triage:local
     pull_policy: never  # built locally by the api service; never pull from a registry
     command: uvicorn app.dashboard:app --host 0.0.0.0 --port 8080
+    restart: unless-stopped
     environment:
       SERVICE_ROLE: dashboard
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
@@ -108,6 +115,7 @@
     image: air-claim-triage:local
     pull_policy: never  # built locally by the api service; never pull from a registry
     command: uvicorn app.stub_provider:app --host 0.0.0.0 --port 8090
+    restart: unless-stopped
     environment:
       STUB_MODEL_DELAY_SECONDS: ${STUB_MODEL_DELAY_SECONDS:-0.15}
       STUB_FAIL: ${STUB_FAIL:-false}
