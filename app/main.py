@@ -121,7 +121,13 @@ def health():
 def submit(claim: Claim, x_client_id: str = Header(default="anonymous", min_length=1, max_length=128,
                                                        pattern=r"^[A-Za-z0-9_.:@-]+$")):
     free_fields = {"free_text": claim.free_text, "cause": claim.cause or ""}
-    injection = re.compile(r"(?i)(ignore\s+(all|previous|prior)\s+instructions|reveal\s+(the\s+)?system prompt|override\s+(the\s+)?rules|disregard.{0,40}instructions|developer message|jailbreak)")
+    injection = re.compile(r"(?i)(ignore\s+(all|any|previous|prior|the|your)\s+(\w+\s+)?(instructions|rules|prompt)"
+                           r"|reveal\s+(the\s+)?(system\s+)?prompt|override\s+(the\s+)?(rules|instructions|policy)"
+                           r"|disregard.{0,40}(instructions|rules)|forget.{0,30}(instructions|rules)|developer message|jailbreak"
+                           r"|^\s*(system|assistant|developer)\s*:|\n\s*(system|assistant|developer)\s*:|\bsystem\s*:\s*you\b"
+                           r"|you are now|act as (an?|the)\b|admin mode|developer mode|(follow|obey) (these|the following|my) (new )?instructions"
+                           r"|(output|return|respond with|set)\s+(the\s+)?(route|position|decision)\b|pay-as-computed|decline_with_cited_provision"
+                           r"|<\s*/?\s*(system|instructions?)\s*>)")
     toxicity = re.compile(r"(?i)\b(fuck|shit|bitch|asshole|bastard)\b")
     errors = []
     for field, value in free_fields.items():
