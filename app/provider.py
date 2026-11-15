@@ -11,11 +11,20 @@ from .worker_metrics import AGENT_RETRIES
 
 r = Redis.from_url(REDIS_URL, decode_responses=True)
 
+# Appended to every prompt version so a real model returns what the reviewer checks.
+OUTPUT_CONTRACT = (
+    "\n\nThe payload's rule_result is the verified decision. Return only a JSON object with keys: "
+    "position and route (copy exactly from rule_result), citation_ids (exactly the source_id values in "
+    "rule_result.citations), basis (copy from rule_result), and recommendation (a plain explanation for the "
+    "officer, at most 120 words). Mention only clauses listed in rule_result.citations and only the amount "
+    "in rule_result.calculation, if any. Never state that payment is authorised."
+)
+
 
 def call_advisor(claim, passages, rule_result, run_id, step_name):
     call_started = time.monotonic()
     provider = os.getenv("MODEL_PROVIDER", "stub").strip().lower()
-    if r.get("provider:open") == "false":
+    if r.get("provider:circuit") == "open":
         raise RuntimeError("provider circuit is open")
     deadline = call_started + float(os.getenv("MODEL_MAX_TOTAL_SECONDS", "12"))
     per_try_timeout = float(os.getenv("MODEL_TIMEOUT_SECONDS", "8"))
@@ -57,10 +66,10 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
         if response is None:
             failures = r.incr("provider:failures")
             if failures >= 3:
-                r.set("provider:open", "false", ex=int(os.getenv("MODEL_CIRCUIT_COOLDOWN_SECONDS", "30")))
+                r.set("provider:circuit", "open", ex=int(os.getenv("MODEL_CIRCUIT_COOLDOWN_SECONDS", "30")))
             raise RuntimeError("stub provider failed after bounded retries") from err
     elif provider == "openai_compatible":
-        if r.get("provider:open" ) == "false":
+        if r.get("provider:circuit") == "open":
             raise RuntimeError("provider circuit is open")
         api_base = os.environ.get("MODEL_API_BASE", "").rstrip("/")
         api_key = os.environ.get("MODEL_API_KEY", "")
@@ -75,7 +84,7 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
                 if remaining <= 0:
                     raise TimeoutError("provider total deadline exceeded")
                 res = httpx.post(api_base + "/chat/completions", headers={"Authorization": f"Bearer {api_key}"},
-                    json={"model": model, "messages": [{"role": "system", "content": prompt},
+                    json={"model": model, "messages": [{"role": "system", "content": prompt + OUTPUT_CONTRACT},
                          {"role": "user", "content": json.dumps(payload)}], "response_format": {"type": "json_object"}},
                     timeout=min(per_try_timeout, remaining))
                 res.raise_for_status()
@@ -83,7 +92,7 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
                 response = json.loads(body["choices"][0]["message"]["content"])
                 usage = body.get("usage", {})
                 r.set("provider:failures", 0)
-                r.set("provider:open", "true")
+                r.set("provider:circuit", "closed")
                 break
             except Exception as exc:
                 err = exc
@@ -99,7 +108,7 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
         if response is None:
             failures = r.incr("provider:failures")
             if failures >= 3:
-                r.set("provider:open", "false", ex=int(os.getenv("MODEL_CIRCUIT_COOLDOWN_SECONDS", "30")))
+                r.set("provider:circuit", "open", ex=int(os.getenv("MODEL_CIRCUIT_COOLDOWN_SECONDS", "30")))
             raise RuntimeError("provider failed after bounded retries") from err
     else:
         raise RuntimeError("MODEL_PROVIDER must be stub or openai_compatible")
@@ -108,7 +117,7 @@ def call_advisor(claim, passages, rule_result, run_id, step_name):
     in_tokens, out_tokens = int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0))
     cost = in_tokens/1000*input_rate + out_tokens/1000*output_rate
     r.set("provider:failures", 0)
-    r.set("provider:open", "true")
+    r.set("provider:circuit", "closed")
     return {"output": response, "prompt_version": prompt_version, "provider": provider,
             "prompt_tokens": in_tokens, "completion_tokens": out_tokens, "cost": cost, "step": step_name,
             "retry_count": retry_count,
