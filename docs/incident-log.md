@@ -30,3 +30,15 @@
 - **Cause:** a missing `AGENT_RETRIES` import broke the reclaim path, and the 20 s wall-clock bound was measured from submission time, which is always over 60 s for a reclaimed message.
 - **Recovery:** add the import and time the bound from when the worker starts the task. A reclaimed claim now completes normally.
 
+## 2026-11-15 — PR review: model text could contradict the decision
+
+- **Symptom:** in code review, a teammate showed that an advisory with the correct position and citations but the text "Approve compensation of ten thousand rupees" passed output validation on a declined claim, and that text replaced the recommendation shown to the officer. "Pay the passenger 10000 rupees" also passed, because amounts were only checked after "INR", "Rs" or "₹".
+- **Cause:** when the exact-text match was relaxed to allow real-model wording, the validator checked route, citations, clauses and prefixed amounts, but not what the explanation actually claimed.
+- **Recovery:** the rule engine's recommendation is now always the authoritative text; model wording is stored separately as `model_explanation`. The validator also rejects amounts written in words, amounts written as "10000 rupees", and, for any route other than pay-as-computed, sentences saying compensation is owed or approved. Checked against 11 contradictory explanations (all rejected), 5 correct paraphrases (all accepted) and 31,774 generated claims (no correct rule text rejected).
+
+## 2026-11-15 — PR review: declines for 24 hours to two weeks notice
+
+- **Symptom:** a claim with notice between 24 hours and two weeks, where the passenger refused the offered alternate flight, was declined under CAR 3.3.1.
+- **Cause:** CAR 3.3.1 requires an alternate flight or refund "as acceptable to the passenger". An alternate the passenger did not accept does not show that obligation was met.
+- **Recovery:** this case now routes to `request_further_evidence`, asking whether a refund was offered. Scenario E14 was updated to match. The same review found that Locust counted non-200 status polls as successes; they are now recorded as failures (checked against a fake API returning HTTP 500: 96 of 96 polls reported as failures).
+

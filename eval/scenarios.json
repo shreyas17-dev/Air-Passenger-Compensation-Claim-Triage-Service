@@ -304,7 +304,7 @@
       "booked_one_way_basic_fare_inr": null,
       "airline_fuel_charge_inr": null
     },
-    "expected_position": "decline_with_cited_provision",
+    "expected_position": "request_further_evidence",
     "supporting_passages": [
       "CAR-3.3.1"
     ]

@@ -171,9 +171,12 @@ def adjudicate(claim, facts, retrieved):
                 "CAR 3.3.1: informed at least two weeks before departure")
         if claim["notice_minutes"] >= 1440:
             if claim.get("alternate_flight_provided") is True:
-                return decline("CAR-3.3.1",
-                    "Decline cancellation compensation. The passenger was informed between two weeks and 24 hours before departure and offered an alternate flight, which meets CAR 3.3.1; compensation under 3.3.2 does not apply. A refund remains available if the alternate was not acceptable.",
-                    "CAR 3.3.1: 24 hours to two weeks notice with alternate offered")
+                # CAR 3.3.1 requires an alternate flight or refund "as acceptable to the passenger".
+                # An offered alternate the passenger did not accept does not show the airline met
+                # that, so do not decline: ask whether an acceptable refund was offered.
+                return make_result("request_further_evidence",
+                    "Notice was between 24 hours and two weeks and an alternate flight was offered, but the passenger did not accept it. CAR 3.3.1 requires an alternate flight or refund as acceptable to the passenger. Confirm whether a full refund was offered. If one was, compensation under 3.3.2 does not apply; if not, refer to an officer.",
+                    "request_further_evidence", "CAR 3.3.1: acceptable alternate or refund not established", citations)
             return make_result("human_escalation", "Notice was between 24 hours and two weeks, but no alternate flight was recorded. Whether the airline offered the refund CAR 3.3.1 requires decides whether 3.3.2 applies; an officer must check.", "human_review", "CAR 3.3.1 compliance unclear", citations)
         if claim.get("notice_minutes", 0) < 1440:
             if claim.get("alternate_flight_provided") is False and claim.get("cause") and claim.get("booked_one_way_basic_fare_inr") is not None and not claim.get("cause_disputed"):

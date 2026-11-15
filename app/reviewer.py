@@ -33,6 +33,28 @@ AUTHORISATION_OR_INJECTION = re.compile(r"(?i)(payment (is|has been) (authori[sz
 TOXIC = re.compile(r"(?i)\b(fuck|shit|bitch|asshole|bastard)\b")
 CLAUSE_REF = re.compile(r"(?<![\d.,])(\d\.\d{1,2}(?:\.\d{1,2})?)(?!\.?\d)(?!,\d)")
 AMOUNT = re.compile(r"(?i)(?:INR|Rs\.?|\u20b9)\s*([\d,]+(?:\.\d+)?)")
+AMOUNT_SUFFIX = re.compile(r"(?i)(\d[\d,]*(?:\.\d+)?)\s*(?:INR|rupees?|rs\b\.?)")
+AMOUNT_IN_WORDS = re.compile(r"(?i)\b(hundred|thousand|lakhs?|crores?)\b")
+PAYMENT_WORD = re.compile(r"(?i)\b(approv\w*|grant\w*|award\w*|sanction\w*|reimburs\w*|pay|pays|paying|payable|paid|entitle\w*|eligib\w*|owe|owes|owed|owing|due|qualif\w*)\b")
+MONEY_CONTEXT = re.compile(r"(?i)(compensation|rupees?|\bINR\b|\bRs\b|\u20b9|\bamount\b|\bpayment\b)")
+NEGATION = re.compile(r"(?i)\b(no|not|never|cannot|can't|isn't|without|neither|nor|declined?|declines)\b")
+
+
+def contradicts_decision(position, text):
+    """For any route other than pay-as-computed, reject text that says money is owed.
+
+    A sentence that mentions compensation, an amount or a currency, and uses a
+    payment word (approve, pay, entitled, owed ...) with no negation shortly
+    before it, contradicts a decline, an evidence request or an escalation."""
+    if position == "pay-as-computed":
+        return False
+    for sentence in re.split(r"[.;!?\n]+", text):
+        if not MONEY_CONTEXT.search(sentence):
+            continue
+        for m in PAYMENT_WORD.finditer(sentence):
+            if not NEGATION.search(sentence[max(0, m.start()-40):m.start()]):
+                return True
+    return False
 
 
 def check_advisory(result, advisory, retrieved):
@@ -62,10 +84,14 @@ def check_advisory(result, advisory, retrieved):
     if unsupported:
         return False, "uncited_clause_reference:" + ",".join(sorted(unsupported))
     computed = (result.get("calculation") or {}).get("recommended_compensation")
-    for raw in AMOUNT.findall(text):
+    if AMOUNT_IN_WORDS.search(text):
+        return False, "amount_in_words"
+    for raw in AMOUNT.findall(text) + AMOUNT_SUFFIX.findall(text):
         amount = float(raw.replace(",", ""))
         if computed is None or abs(amount - float(computed)) > 0.01:
             return False, "unsupported_amount"
+    if contradicts_decision(result.get("position"), text):
+        return False, "explanation_contradicts_decision"
     return True, "verified"
 
 
@@ -124,7 +150,9 @@ def process(item):
         if not ok_output:
             record_event(rid, "provider_output_verification", agent="entitlement_reviewer", verified=False, reason=reason, fallback="human_escalation")
             raise ValueError(f"provider output rejected: {reason}")
-        result["recommendation"] = advisory.get("recommendation", result["recommendation"])
+        # The rule engine's recommendation stays authoritative. The model's wording is
+        # kept only as a separately labelled, already-verified explanation.
+        result["model_explanation"] = advisory.get("recommendation")
         result["token_usage"] = {"prompt_tokens": model_call["prompt_tokens"],
                                  "completion_tokens": model_call["completion_tokens"], "cost": model_call["cost"],
                                  "step": model_call["step"], "retries": model_call["retry_count"]}
