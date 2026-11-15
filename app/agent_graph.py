@@ -3,9 +3,12 @@ import json
 import os
 import re
 import time
+from contextvars import copy_context
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -103,12 +106,17 @@ def next_step(state: IntakeState):
     return "tools" if isinstance(msg, AIMessage) and msg.tool_calls else END
 
 
-def bounded_tools(state: IntakeState):
-    started = time.monotonic()
-    output = TOOL_NODE.invoke(state)
-    if time.monotonic()-started > float(os.getenv("AGENT_TOOL_TIMEOUT_SECONDS", "3")):
+_TOOL_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="agent-tool")
+
+
+def bounded_tools(state: IntakeState, config: RunnableConfig):
+    # Enforce the deadline while the tool runs, instead of checking after it returns.
+    future = _TOOL_POOL.submit(copy_context().run, TOOL_NODE.invoke, state, config)
+    try:
+        return future.result(timeout=float(os.getenv("AGENT_TOOL_TIMEOUT_SECONDS", "3")))
+    except FuturesTimeout:
+        future.cancel()
         raise TimeoutError("agent tool-call deadline exceeded")
-    return output
 
 
 builder = StateGraph(IntakeState)

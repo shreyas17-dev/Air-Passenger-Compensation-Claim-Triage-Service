@@ -14,7 +14,7 @@ The optional `X-Client-Id` header selects the per-client rate-limit bucket; omis
 
 ## GET /v1/runs/{run_id}
 
-Returns `{run_id,status,created_at,updated_at}` and, when completed, `result`. Result positions are `pay-as-computed`, `request_further_evidence`, `decline_with_cited_provision`, or `human_escalation`. Results include route, basis, recommendation, clause citations, authority note, retrieved passages, prompt version, token usage, and latency where available. Provider or verification failure returns a safe human-escalation result; an intake failure returns status `failed`. Unknown IDs return 404.
+Returns `{run_id,status,created_at,updated_at}` and, when completed, `result`. Result positions are `pay-as-computed`, `request_further_evidence`, `decline_with_cited_provision`, or `human_escalation`. Results include route, basis, recommendation, clause citations, authority note, retrieved passages, prompt version, token usage, and latency where available. `recommendation` is always the rule engine's text; `model_explanation`, when present, is the model's verified wording and is advisory only. Provider or verification failure returns a safe human-escalation result; an intake failure returns status `failed`. Unknown IDs return 404.
 
 ## GET /v1/runs/{run_id}/trace
 

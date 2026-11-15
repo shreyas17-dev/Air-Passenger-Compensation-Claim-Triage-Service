@@ -1,5 +1,5 @@
 {
-  "created_at": 1794125450.1146133,
+  "created_at": 1794764759.2704897,
   "metric_definitions": {
     "groundedness": "fraction of routes supported by retrieved passages and verifier; no-claim escalation is safe",
     "context_relevance": "per-case fraction of citations matching scenario-declared supporting clause IDs, averaged",
@@ -11,24 +11,24 @@
     "prompt_version": "triage-v1",
     "strategy": "single entitlement search",
     "metrics": {
-      "groundedness": 0.7272727272727273,
-      "context_relevance": 0.18181818181818182,
+      "groundedness": 0.8636363636363636,
+      "context_relevance": 0.09090909090909091,
       "faithfulness": 1.0,
-      "hallucination_rate": 0.0,
-      "accuracy": 1.0,
+      "hallucination_rate": 0.4090909090909091,
+      "accuracy": 0.5909090909090909,
       "scenario_count": 22
     },
     "cases": [
       {
         "id": "E01",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
-        "groundedness": 0,
+        "expected": "decline_with_cited_provision",
+        "actual": "human_escalation",
+        "groundedness": 1,
         "context_relevance": 0.0,
         "faithfulness": 1,
-        "hallucination": 0,
+        "hallucination": 1,
         "citation_ids": [],
-        "pass": true
+        "pass": false
       },
       {
         "id": "E02",
@@ -104,25 +104,25 @@
       },
       {
         "id": "E08",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
-        "groundedness": 0,
-        "context_relevance": 0.0,
-        "faithfulness": 1,
-        "hallucination": 0,
-        "citation_ids": [],
-        "pass": true
-      },
-      {
-        "id": "E09",
-        "expected": "human_escalation",
+        "expected": "decline_with_cited_provision",
         "actual": "human_escalation",
         "groundedness": 1,
         "context_relevance": 0.0,
         "faithfulness": 1,
-        "hallucination": 0,
+        "hallucination": 1,
         "citation_ids": [],
-        "pass": true
+        "pass": false
+      },
+      {
+        "id": "E09",
+        "expected": "pay-as-computed",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 1,
+        "citation_ids": [],
+        "pass": false
       },
       {
         "id": "E10",
@@ -137,17 +137,39 @@
       },
       {
         "id": "E11",
-        "expected": "human_escalation",
+        "expected": "pay-as-computed",
         "actual": "human_escalation",
         "groundedness": 1,
         "context_relevance": 0.0,
         "faithfulness": 1,
-        "hallucination": 0,
+        "hallucination": 1,
         "citation_ids": [],
-        "pass": true
+        "pass": false
       },
       {
         "id": "E12",
+        "expected": "decline_with_cited_provision",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 1,
+        "citation_ids": [],
+        "pass": false
+      },
+      {
+        "id": "E13",
+        "expected": "decline_with_cited_provision",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 1,
+        "citation_ids": [],
+        "pass": false
+      },
+      {
+        "id": "E14",
         "expected": "request_further_evidence",
         "actual": "request_further_evidence",
         "groundedness": 0,
@@ -155,30 +177,6 @@
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [],
-        "pass": true
-      },
-      {
-        "id": "E13",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
-        "groundedness": 1,
-        "context_relevance": 0.0,
-        "faithfulness": 1,
-        "hallucination": 0,
-        "citation_ids": [],
-        "pass": true
-      },
-      {
-        "id": "E14",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
-        "groundedness": 1,
-        "context_relevance": 1.0,
-        "faithfulness": 1,
-        "hallucination": 0,
-        "citation_ids": [
-          "CAR-3.2.2"
-        ],
         "pass": true
       },
       {
@@ -194,6 +192,28 @@
       },
       {
         "id": "E16",
+        "expected": "decline_with_cited_provision",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 1,
+        "citation_ids": [],
+        "pass": false
+      },
+      {
+        "id": "E17",
+        "expected": "decline_with_cited_provision",
+        "actual": "human_escalation",
+        "groundedness": 1,
+        "context_relevance": 0.0,
+        "faithfulness": 1,
+        "hallucination": 1,
+        "citation_ids": [],
+        "pass": false
+      },
+      {
+        "id": "E18",
         "expected": "request_further_evidence",
         "actual": "request_further_evidence",
         "groundedness": 0,
@@ -201,30 +221,6 @@
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [],
-        "pass": true
-      },
-      {
-        "id": "E17",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
-        "groundedness": 1,
-        "context_relevance": 0.0,
-        "faithfulness": 1,
-        "hallucination": 0,
-        "citation_ids": [],
-        "pass": true
-      },
-      {
-        "id": "E18",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
-        "groundedness": 1,
-        "context_relevance": 1.0,
-        "faithfulness": 1,
-        "hallucination": 0,
-        "citation_ids": [
-          "CAR-3.2.2"
-        ],
         "pass": true
       },
       {
@@ -240,14 +236,14 @@
       },
       {
         "id": "E20",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
-        "groundedness": 0,
+        "expected": "decline_with_cited_provision",
+        "actual": "human_escalation",
+        "groundedness": 1,
         "context_relevance": 0.0,
         "faithfulness": 1,
-        "hallucination": 0,
+        "hallucination": 1,
         "citation_ids": [],
-        "pass": true
+        "pass": false
       },
       {
         "id": "E21",
@@ -278,7 +274,7 @@
     "strategy": "condition and cross-reference search",
     "metrics": {
       "groundedness": 1.0,
-      "context_relevance": 0.6590909090909091,
+      "context_relevance": 0.3772727272727273,
       "faithfulness": 1.0,
       "hallucination_rate": 0.0,
       "accuracy": 1.0,
@@ -287,13 +283,14 @@
     "cases": [
       {
         "id": "E01",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 0.5,
+        "context_relevance": 0.4,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
+          "CAR-3.3.1",
           "CAR-3.3.2",
           "CAR-3.3.3",
           "CAR-3.3.4",
@@ -306,10 +303,11 @@
         "expected": "request_further_evidence",
         "actual": "request_further_evidence",
         "groundedness": 1,
-        "context_relevance": 0.5,
+        "context_relevance": 0.4,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
+          "CAR-3.3.1",
           "CAR-3.3.2",
           "CAR-3.3.3",
           "CAR-3.3.4",
@@ -385,13 +383,14 @@
       },
       {
         "id": "E08",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 0.5,
+        "context_relevance": 0.4,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
+          "CAR-3.3.1",
           "CAR-3.3.2",
           "CAR-3.3.3",
           "CAR-3.3.4",
@@ -401,14 +400,18 @@
       },
       {
         "id": "E09",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
+        "expected": "pay-as-computed",
+        "actual": "pay-as-computed",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.4.1"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
@@ -427,26 +430,31 @@
       },
       {
         "id": "E11",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
+        "expected": "pay-as-computed",
+        "actual": "pay-as-computed",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.5.1"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
       {
         "id": "E12",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 0.5,
+        "context_relevance": 0.4,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
+          "CAR-3.3.1",
           "CAR-3.3.2",
           "CAR-3.3.3",
           "CAR-3.3.4",
@@ -456,27 +464,35 @@
       },
       {
         "id": "E13",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.4.1"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
       {
         "id": "E14",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
+        "expected": "request_further_evidence",
+        "actual": "request_further_evidence",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.2.2"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
@@ -493,13 +509,14 @@
       },
       {
         "id": "E16",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 0.5,
+        "context_relevance": 0.4,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
+          "CAR-3.3.1",
           "CAR-3.3.2",
           "CAR-3.3.3",
           "CAR-3.3.4",
@@ -509,27 +526,35 @@
       },
       {
         "id": "E17",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.4.1"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
       {
         "id": "E18",
-        "expected": "human_escalation",
-        "actual": "human_escalation",
+        "expected": "request_further_evidence",
+        "actual": "request_further_evidence",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.2.2"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
@@ -538,23 +563,28 @@
         "expected": "human_escalation",
         "actual": "human_escalation",
         "groundedness": 1,
-        "context_relevance": 1.0,
+        "context_relevance": 0.2,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
-          "CAR-3.5.1"
+          "CAR-3.3.1",
+          "CAR-3.3.2",
+          "CAR-3.3.3",
+          "CAR-3.3.4",
+          "CAR-3.8.1"
         ],
         "pass": true
       },
       {
         "id": "E20",
-        "expected": "request_further_evidence",
-        "actual": "request_further_evidence",
+        "expected": "decline_with_cited_provision",
+        "actual": "decline_with_cited_provision",
         "groundedness": 1,
-        "context_relevance": 0.5,
+        "context_relevance": 0.4,
         "faithfulness": 1,
         "hallucination": 0,
         "citation_ids": [
+          "CAR-3.3.1",
           "CAR-3.3.2",
           "CAR-3.3.3",
           "CAR-3.3.4",
@@ -587,10 +617,10 @@
     ]
   },
   "delta": {
-    "groundedness": 0.2727,
-    "context_relevance": 0.4773,
+    "groundedness": 0.1364,
+    "context_relevance": 0.2864,
     "faithfulness": 0.0,
-    "hallucination_rate": 0.0,
-    "accuracy": 0.0
+    "hallucination_rate": -0.4091,
+    "accuracy": 0.4091
   }
 }

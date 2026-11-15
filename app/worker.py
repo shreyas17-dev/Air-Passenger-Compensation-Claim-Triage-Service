@@ -10,7 +10,7 @@ from .main import REDIS_URL, record_event
 from .agents import classify_extract, lookup_clause, lookup_claim_field
 from .agent_graph import retrieve_with_agent
 from .telemetry import configure, traced
-from .worker_metrics import (AGENT, AGENT_RUNS, AGENT_STEP_LATENCY,
+from .worker_metrics import (AGENT, AGENT_RETRIES, AGENT_RUNS, AGENT_STEP_LATENCY,
                              AGENT_TASK_LATENCY, AGENT_TOOL_CALLS,
                              PROCESS_UPTIME, start_metrics_server)
 
@@ -54,7 +54,9 @@ def process(item):
                      latency_ms=round((time.monotonic()-t)*1000, 2))
         for tool_event in tool_events:
             record_event(rid, "agent_tool", agent="intake", **tool_event)
-        if time.monotonic() - started > float(os.getenv("AGENT_MAX_WALL_SECONDS", "20")):
+        # Bound this attempt from when the worker picked it up, so a reclaimed
+        # message (always >60 s after submission) can still complete.
+        if time.monotonic() - task_started > float(os.getenv("AGENT_MAX_WALL_SECONDS", "20")):
             raise TimeoutError("intake agent exceeded wall-clock bound")
         trace_context = {}
         from opentelemetry import propagate
@@ -68,7 +70,7 @@ def process(item):
         r.incr("agent:success:intake")
         r.hincrby("agent:metrics:intake", "steps", agent_steps + 1)
         r.hincrby("agent:metrics:intake", "tool_calls", tool_calls)
-        r.hincrby("agent:metrics:intake", "latency_ms_total", round((time.monotonic()-task_started)*1000))
+        r.hincrbyfloat("agent:metrics:intake", "latency_ms_total", round((time.monotonic()-task_started)*1000, 2))
         r.hincrby("agent:metrics:intake", "runs", 1)
         AGENT_RUNS.labels(AGENT, "success").inc()
         AGENT_TOOL_CALLS.labels(AGENT, "claim_field_lookup").inc()
@@ -115,6 +117,9 @@ def main():
         for msg_id, fields in messages:
             try:
                 process(json.loads(fields["payload"]))
+            except Exception:
+                # Never let one bad message kill the worker process.
+                logging.exception(json.dumps({"event": "intake_message_unhandled", "message_id": msg_id}))
             finally:
                 r.xack("claim_queue", "intake", msg_id)
 
