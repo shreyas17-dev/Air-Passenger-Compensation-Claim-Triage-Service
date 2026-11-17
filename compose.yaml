@@ -180,6 +180,7 @@
       api: { condition: service_healthy }
     volumes:
       - "./locustfile.py:/srv/locustfile.py:ro"
+      - "./locust_negative.py:/srv/locust_negative.py:ro"
       - "./eval:/srv/eval"
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0

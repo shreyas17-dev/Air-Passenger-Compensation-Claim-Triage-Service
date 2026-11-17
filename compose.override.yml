@@ -1,0 +1,7 @@
+# Local override: port 8000 is already used by another project on this machine,
+# so publish the API on host port 8001 instead. Inside Docker it is still api:8000.
+services:
+  api:
+    ports: !override ["8001:8000"]
+  grafana:
+    ports: !override ["3001:3000"]
