@@ -32,6 +32,14 @@ Returns `{samples:[...]}` with up to 100 automatically sampled live runs. Each s
 
 Returns aggregate USD cost, cost per 100 completed runs, prompt/completion token totals, per-step cost, and the largest cost step.
 
+## GET /v1/activity
+
+Query `limit` (1–50, default 15). Returns `{runs:[...]}`, newest first, for runs from any client: `run_id`, `status`, `created_at`, `disruption`, `flight_number`, `scheduled_departure`, and, once completed, `position` and `latency_ms`. Read-only; built from the existing `events:all` log and `run:{id}` state.
+
+## GET /v1/evaluation
+
+Returns a summary of `eval/latest-report.json`: `created_at`, `before` and `after` (`prompt_version`, `strategy`, `metrics`), `delta`, and `metric_definitions`. Returns 404 when no report exists.
+
 ## GET /healthz
 
 Returns `{status:"ok",queue:"ok",uptime_seconds}` when Redis is reachable; otherwise returns HTTP 503.

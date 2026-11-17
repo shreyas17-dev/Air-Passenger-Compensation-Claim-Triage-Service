@@ -292,6 +292,49 @@ def costs():
             "completion_tokens": int(redis.hget("tokens:completion", "count") or 0)}
 
 
+@app.get("/v1/activity")
+def activity(limit: int = 15):
+    """Most recent runs from any client, newest first, read from the existing run state."""
+    limit = max(1, min(limit, 50))
+    run_ids = []
+    for raw in reversed(redis.lrange("events:all", -2000, -1)):
+        try:
+            event = json.loads(raw)
+        except ValueError:
+            continue
+        rid = event.get("run_id")
+        if event.get("event") == "submitted" and rid and rid not in run_ids:
+            run_ids.append(rid)
+            if len(run_ids) >= limit:
+                break
+    runs = []
+    for rid in run_ids:
+        state = redis.hgetall(f"run:{rid}")
+        if not state:
+            continue
+        claim = json.loads(state.get("claim") or "{}")
+        result = json.loads(state["result"]) if state.get("result") else {}
+        runs.append({"run_id": rid, "status": state.get("status"), "created_at": state.get("created_at"),
+                     "disruption": claim.get("disruption"), "flight_number": claim.get("flight_number"),
+                     "scheduled_departure": claim.get("scheduled_departure"),
+                     "position": result.get("position"), "latency_ms": result.get("latency_ms")})
+    return {"runs": runs}
+
+
+@app.get("/v1/evaluation")
+def evaluation_summary():
+    """Summary of the committed offline evaluation report (eval/latest-report.json)."""
+    path = ROOT / "eval" / "latest-report.json"
+    if not path.exists():
+        raise HTTPException(404, "no evaluation report; run python -m app.evaluation")
+    report = json.loads(path.read_text(encoding="utf8"))
+    def side(key):
+        part = report.get(key, {})
+        return {"prompt_version": part.get("prompt_version"), "strategy": part.get("strategy"), "metrics": part.get("metrics", {})}
+    return {"created_at": report.get("created_at"), "before": side("before"), "after": side("after"),
+            "delta": report.get("delta", {}), "metric_definitions": report.get("metric_definitions", {})}
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     return (ROOT / "app" / "static" / "index.html").read_text(encoding="utf8")

@@ -1,0 +1,32 @@
+{
+  "finished_at": "2026-11-17T01:53:07.939660+00:00",
+  "users": 5,
+  "outcomes": {
+    "completed": 350
+  },
+  "positions": {
+    "pay-as-computed": 18,
+    "human_escalation": 199,
+    "decline_with_cited_provision": 67,
+    "request_further_evidence": 66
+  },
+  "disruptions": {
+    "delay": 71,
+    "cancellation": 199,
+    "denied_boarding": 62,
+    "downgrading": 23
+  },
+  "http_errors": {},
+  "claims_attempted": 350,
+  "failure_rate": 0.0,
+  "submission_to_result_ms": {
+    "samples": 350,
+    "p50": 730,
+    "p95": 850,
+    "p99": 1400,
+    "max": 1736.406667999745,
+    "completed_per_second": 5.86
+  },
+  "claims_finished": 350,
+  "note": "positions are triage outcomes of completed runs; human_escalation is a valid completed result"
+}

@@ -208,13 +208,13 @@ class ClaimUser(HttpUser):
 
 @events.test_stop.add_listener
 def _write_summary(environment, **_):
-    run = environment.stats.get("submission-to-result", "RUN")
     with _outcomes_lock:
         finished = OUTCOMES["completed"] + OUTCOMES["run_failed"]
         attempted = sum(OUTCOMES.values())
         if not attempted:
             # Nothing from ClaimUser ran (e.g. locust_negative.py imported this module).
             return
+        run = environment.stats.get("submission-to-result", "RUN")
         summary = {
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "users": getattr(environment.runner, "target_user_count", None),
